@@ -9,7 +9,7 @@ using UnityEngine.Networking;
 
 namespace CoreTwitchLibSetup
 {
-	public class TwitchLibCtrl : MonoBehaviour
+	public class TwitchLibCtrl : ManagerBase<TwitchLibCtrl>
 	{
 		[SerializeField]
 		private string _channelToConnectTo = "irishjohngames";
