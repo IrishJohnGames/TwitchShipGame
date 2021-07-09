@@ -1,55 +1,73 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System;
 using TMPro;
 using UnityEngine;
+using System.Linq;
+
 //TODO: proper namespace?
 //namespace Assets.Gameplay
 //{
 public class Player : MonoBehaviour
 {
     [SerializeField]
-    SpriteRenderer _spriteRenderer = null;
+    private DisplayMembers displayMembers;
+
+    [Serializable]
+    private class DisplayMembers {
+        [SerializeField]
+        internal TextMeshPro ShipName, CptName, CrewNames;
+
+        [SerializeField]
+        SpriteRenderer Image;
+    }
 
     [SerializeField]
-    TextMeshPro _displayNameRenderer = null;
-    
+    private List<CrewMate> Crew = new List<CrewMate>();
+    private string ShipName;
+
+    [Serializable]
+    class CrewMate
+    {
+        internal int index = -1;
+        internal string Name = "";
+        internal string Role = "";
+    }
+
     /// <summary>
     /// will be called at Player.OnDestroy unity event
     /// </summary>
     public event Action<Player> onDestroy;
-    
-    /// <summary>
-    /// sets name rendered on top of player sprite
-    /// </summary>
-    public string displayName
+
+    public void InitialisePlayer(string shipName, string captain)
     {
-        get => _displayNameRenderer.text;
-        set => _displayNameRenderer.text = value;
+        ShipName = shipName;
+        AddCrewmate(captain);
     }
 
-    /// <summary>
-    /// store random value for wave animation purposes
-    /// </summary>
-    float _wavingRng = 0;
-
-    private void Awake()
+    public void AddCrewmate(string name)
     {
-        _wavingRng = UnityEngine.Random.Range(0.00001f, 0.00005f);
+        Crew.Add(new CrewMate()
+        {
+            index = Crew.Count,
+            Name = name,
+            Role = NameManager.Instance.GetCrewRoleName(Crew.Count)
+        });
+
+        RefreshDisplay();
     }
 
-    private void Update()
+    void RefreshDisplay()
     {
-        
+        displayMembers.CrewNames.text = "";
+
+        displayMembers.ShipName.text = ShipName;
+        displayMembers.CptName.text = Crew.First(o=>o.index == 0).Name;
+
+        foreach (CrewMate c in Crew?.OrderBy(o => o.index))
+            displayMembers.CrewNames.text += $"{c.Role} {c.Name}\n";
     }
 
-    private void LateUpdate()
-    {
-        //simple wave animation
-        transform.position += new Vector3(Mathf.Sin(Time.time) * (0.00001f + _wavingRng), Mathf.Sin(Time.time) * (_wavingRng + 0.0001f), 0);
-    }
+    private void OnDestroy() => onDestroy?.Invoke(this);
 
-    private void OnDestroy()
-    {
-        onDestroy?.Invoke(this);
-    }
+    internal string GetCrewmate(string name) => Crew.FirstOrDefault(o => o.Name == name)?.Name;
 }
-//}

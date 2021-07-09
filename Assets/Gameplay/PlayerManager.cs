@@ -56,17 +56,19 @@ public class PlayerManager : ManagerBase<PlayerManager>
     /// <param name="playerName">name to display on top of the player sprite</param>
     /// <param name="position">position to spawn player at</param>
     /// <returns>instance of the player, can only create 1 player per playerName</returns>
-    public Player Spawn(string playerName, Vector2 position)
+    public Player Spawn(string shipName, string playerName)
     {
-        //TODO: only allow 1 player instance?
-        var existingPlayer = FindPlayerByName(playerName);
-        if (existingPlayer != null) return null;
+        Debug.Log("2 Spawing " + playerName);
+
+        //    //TODO: only allow 1 player instance?
+        //    var existingPlayer = FindPlayerByName(playerName);
+        //    if (existingPlayer != null) return null;
 
         //create instance of player prefab at position
-        var instance = Instantiate(_playerPrefab, position, Quaternion.identity);
+        var instance = Instantiate(_playerPrefab, GetRandomSpawnPosition(), Quaternion.identity);
         //set instance player name to display
-        instance.displayName = playerName;
-      
+        instance.InitialisePlayer(shipName, playerName);
+
         //register ondestroy hook that will stop tracking the player in the _players list
         instance.onDestroy += (self) => {
             _players.Remove(self);
@@ -78,21 +80,10 @@ public class PlayerManager : ManagerBase<PlayerManager>
         return instance;
     }
 
-    /// <summary>
-    /// Spawns a player at default spawnzone
-    /// </summary>
-    /// <param name="playerName">name to display on top of the player sprite</param>
-    /// <returns>instance of the player, can only create 1 player per playerName</returns>
-    public Player Spawn(string playerName)
-    {
-        //TODO: make sure that players dont spawn too near each other?
-        return Spawn(playerName, GetRandomSpawnPosition());
-    }
-
     [ContextMenu("Spawn player")]
     void SpawnDebug()
     {
-        Spawn("Player "+UnityEngine.Random.Range(0, float.MaxValue), GetRandomSpawnPosition());
+        Spawn("HornCoom", "Player "+UnityEngine.Random.Range(0, float.MaxValue));
     }
 
     [ContextMenu("Spawn 10 players")]
@@ -105,9 +96,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
     }
 
     //TODO: maybe store players in dictionary for faster search access?
-    public Player FindPlayerByName(string name)
-    {
-        return _players.FirstOrDefault(x => x.displayName.ToLower() == name.ToLower());
-    }
+    //public Player FindPlayerByName(string name) =>
+    //     _players.FirstOrDefault(x => !string.IsNullOrEmpty(x.GetCrewmate(name)));
 }
 //}
