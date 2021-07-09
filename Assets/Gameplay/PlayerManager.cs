@@ -55,9 +55,13 @@ public class PlayerManager : ManagerBase<PlayerManager>
     /// </summary>
     /// <param name="playerName">name to display on top of the player sprite</param>
     /// <param name="position">position to spawn player at</param>
-    /// <returns>instance of the player</returns>
+    /// <returns>instance of the player, can only create 1 player per playerName</returns>
     public Player Spawn(string playerName, Vector2 position)
     {
+        //TODO: only allow 1 player instance?
+        var existingPlayer = FindPlayerByName(playerName);
+        if (existingPlayer != null) return null;
+
         //create instance of player prefab at position
         var instance = Instantiate(_playerPrefab, position, Quaternion.identity);
         //set instance player name to display
@@ -78,7 +82,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
     /// Spawns a player at default spawnzone
     /// </summary>
     /// <param name="playerName">name to display on top of the player sprite</param>
-    /// <returns>instance of the player</returns>
+    /// <returns>instance of the player, can only create 1 player per playerName</returns>
     public Player Spawn(string playerName)
     {
         //TODO: make sure that players dont spawn too near each other?
