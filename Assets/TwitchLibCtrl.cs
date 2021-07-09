@@ -165,12 +165,29 @@ namespace CoreTwitchLibSetup
 		{
 			switch (e.Command.CommandText)
 			{
+				case "BattleRoyale":
+					_client.SendMessage(e.Command.ChatMessage.Channel, "Battle royale is starting!! Get to your ships! You have 2 minutes!");
+					StartCoroutine(BeginBattleRoyale());
+					break;
+
+				case "joincrew":
+					string shipname = e.Command.ArgumentsAsList.FirstOrDefault()?.Trim();
+					if (string.IsNullOrEmpty(shipname)) return;
+
+					Player player = PlayerManager.Instance.GetPlayerByShipName(shipname);
+					if (player == null) return;
+
+					_client.SendMessage(e.Command.ChatMessage.Channel, $"{e.Command.ChatMessage.DisplayName} has joined the crew of { shipname }");
+					player.AddCrewmate(e.Command.ChatMessage.DisplayName);
+					break;
+
 				//case "hello":
 				//case "ahoy":
 				//	_client.SendMessage(e.Command.ChatMessage.Channel, $"Ahoy {e.Command.ChatMessage.DisplayName}!");
 				//	//example of how to spawn a player 
 				//	PlayerManager.Instance.Spawn(e.Command.CommandText, e.Command.ChatMessage.DisplayName);
 				//	break;
+
 				case "about":
 					_client.SendMessage(e.Command.ChatMessage.Channel, "I be a Twitch bot running on the TwitchLib vessel!");
 					break;
@@ -180,6 +197,12 @@ namespace CoreTwitchLibSetup
 			}
 		}
 		
+		IEnumerator BeginBattleRoyale()
+        {
+			yield return new WaitForSecondsRealtime(120);
+			PlayerManager.Instance.BattleRoyaleBegin();
+        }
+
 		private void FixedUpdate()
         {
 			if(MessagesReceivedIRC.Any() && ToSpawn.Any() & !DoingShit && Time.time > bufferTime)
