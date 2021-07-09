@@ -69,7 +69,7 @@ namespace CoreTwitchLibSetup
 			_pubSub.Connect();
 
 			_api = new Api();
-			_api.Settings.ClientId = "FETCH THIS FROM SOMEWHERE...";
+			_api.Settings.ClientId = auth.client_id;
 		}
 
 		private void OnPubSubServiceConnected(object sender, System.EventArgs e)
@@ -94,14 +94,6 @@ namespace CoreTwitchLibSetup
 				});
 				// PlayerManager.Instance.Spawn("Hello", "there");//();
 			}
-		private void OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)
-		{
-			Debug.Log("Redemption!!!: " + e.Message + " " + e.RewardTitle);
-		}
-		private void OnChannelPointsReceived(object sender, TwitchLib.PubSub.Events.OnChannelPointsRewardRedeemedArgs e)
-		{
-			Debug.Log("Redemption: " + e.RewardRedeemed.Redemption.Reward.Title + " " + e.RewardRedeemed.Redemption.User.DisplayName + " " + e.RewardRedeemed.Redemption.Status);
-		
 		}
 
 		/// <summary>
@@ -187,7 +179,6 @@ namespace CoreTwitchLibSetup
 					//	break;
 			}
 		}
-
 		
 		private void FixedUpdate()
         {

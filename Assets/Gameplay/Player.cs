@@ -3,12 +3,16 @@ using System;
 using TMPro;
 using UnityEngine;
 using System.Linq;
+using CoreTwitchLibSetup;
+using StateMachineLogic;
 
 //TODO: proper namespace?
 //namespace Assets.Gameplay
 //{
 public class Player : MonoBehaviour
 {
+    internal StateMachine<Player> stateMachine;
+
     [SerializeField]
     private DisplayMembers displayMembers;
 
@@ -18,12 +22,14 @@ public class Player : MonoBehaviour
         internal TextMeshPro ShipName, CptName, CrewNames;
 
         [SerializeField]
-        SpriteRenderer Image;
+        internal SpriteRenderer Flag;
     }
 
     [SerializeField]
     private List<CrewMate> Crew = new List<CrewMate>();
     private string ShipName;
+
+    internal string GetShipName() => ShipName;
 
     [Serializable]
     class CrewMate
@@ -31,6 +37,17 @@ public class Player : MonoBehaviour
         internal int index = -1;
         internal string Name = "";
         internal string Role = "";
+    }
+
+    private void Start()
+    {
+        stateMachine = new StateMachine<Player>(this);
+        stateMachine.ChangeState(new PlayerST_Spawned());
+    }
+
+    private void Update()
+    {
+        stateMachine.Update();
     }
 
     /// <summary>
@@ -42,6 +59,10 @@ public class Player : MonoBehaviour
     {
         ShipName = shipName;
         AddCrewmate(captain);
+
+        StartCoroutine(TwitchLibCtrl.Instance.GetUserProfileIcon(captain, (sprite) => {
+            displayMembers.Flag.sprite = sprite;
+        }));
     }
 
     public void AddCrewmate(string name)
@@ -70,4 +91,6 @@ public class Player : MonoBehaviour
     private void OnDestroy() => onDestroy?.Invoke(this);
 
     internal string GetCrewmate(string name) => Crew.FirstOrDefault(o => o.Name == name)?.Name;
+
+    internal decimal GetcrewCount() => Crew.Count();
 }

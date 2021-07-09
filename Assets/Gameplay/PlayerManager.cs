@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using Random = UnityEngine.Random;
+
 //TODO: proper namespace?
 //namespace Assets.Gameplay
 //{
@@ -15,6 +17,10 @@ public class PlayerManager : ManagerBase<PlayerManager>
 {
     [SerializeField]
     Transform _spawnZoneTransform = null;
+
+    [SerializeField]
+    Transform _battleZoneTranform = null;
+
     //TODO: multiple player prefabs?
     [SerializeField]
     Player _playerPrefab = null;
@@ -30,9 +36,12 @@ public class PlayerManager : ManagerBase<PlayerManager>
         for (int i = 0; i < 10; i++)
         {
             Spawn("HORN COOM", GetRandomSpawnPosition());
-
-        }*/
+        }
+        */
     }
+
+    public Player GetPlayerByShipName(string shipName) =>
+        _players.FirstOrDefault(o => o.GetShipName() == shipName);
 
     /// <summary>
     /// Gets a random spawn position relative to the _spawnZoneTransform
@@ -44,10 +53,22 @@ public class PlayerManager : ManagerBase<PlayerManager>
         var scaleX = _spawnZoneTransform.transform.localScale.x;
         var scaleY = _spawnZoneTransform.transform.localScale.y;
         //rng       
-        var x = UnityEngine.Random.Range(-scaleX / 2, scaleX / 2);
-        var y = UnityEngine.Random.Range(1, 1+(scaleY / 2));
+        var x = Random.Range(-scaleX / 2, scaleX / 2);
+        var y = Random.Range(1, 1+(scaleY / 2));
 
         return _spawnZoneTransform.position + new Vector3(x, y);
+    }
+
+    public Vector2 GetRandomBattleZoneStartPosition()
+    {
+        //read spawnzone bounds
+        var scaleX = _battleZoneTranform.transform.localScale.x;
+        var scaleY = _battleZoneTranform.transform.localScale.y;
+        //rng       
+        var x = Random.Range(-scaleX / 2, scaleX / 2);
+        var y = Random.Range(1, 1 + (scaleY / 2));
+
+        return _battleZoneTranform.position + new Vector3(x, y);
     }
 
     /// <summary>
@@ -94,6 +115,17 @@ public class PlayerManager : ManagerBase<PlayerManager>
             SpawnDebug();
         }
     }
+
+    internal void BattleRoyaleBegin()
+    {
+        foreach(Player p in _players)
+        {
+            p.stateMachine.ChangeState(new PlayerSt_BattleRoyaleStarting());
+        }
+    }
+
+    internal object GetCrewCount() => _players.Sum(o => o.GetcrewCount());
+    internal object GetPlayerCount() => _players.Count();
 
     //TODO: maybe store players in dictionary for faster search access?
     //public Player FindPlayerByName(string name) =>
