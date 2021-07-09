@@ -56,6 +56,7 @@ namespace CoreTwitchLibSetup
 		private void OnChannelPointsReceived(object sender, TwitchLib.PubSub.Events.OnChannelPointsRewardRedeemedArgs e)
 		{
 			Debug.Log("Redemption: " + e.RewardRedeemed.Redemption.Reward.Title + " " + e.RewardRedeemed.Redemption.User.DisplayName + " " + e.RewardRedeemed.Redemption.Status);
+		
 		}
 
 		private void OnListenResponse(object sender, OnListenResponseArgs e)
@@ -84,6 +85,10 @@ namespace CoreTwitchLibSetup
 				case "hello":
 				case "ahoy":
 					_client.SendMessage(e.Command.ChatMessage.Channel, $"Ahoy {e.Command.ChatMessage.DisplayName}!");
+
+					//example of how to spawn a player 
+					PlayerManager.Instance.Spawn(e.Command.ChatMessage.DisplayName);
+
 					break;
 				case "about":
 					_client.SendMessage(e.Command.ChatMessage.Channel, "I be a Twitch bot running on the TwitchLib vessel!");
