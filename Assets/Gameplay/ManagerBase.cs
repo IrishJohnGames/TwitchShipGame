@@ -15,5 +15,12 @@ public class ManagerBase<T> : MonoBehaviour where T: Component
             return _instance;
         }
     }
+
+    public static bool isApplicationQuitting { get; private set; }
+
+    private void OnApplicationQuit()
+    {
+        isApplicationQuitting = true;
+    }
 }
 //}

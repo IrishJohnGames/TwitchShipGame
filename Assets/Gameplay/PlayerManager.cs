@@ -28,7 +28,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
     const int RANGE_OF_PLAYERS = 5;
 
-    internal IEnumerable<Player> GetPlayersAroundVector2(Vector3 position) 
+    internal IEnumerable<Player> GetPlayersAroundVector2(Vector3 position)
         => _players.Where(o => Vector2.SqrMagnitude(o.transform.position - position) < RANGE_OF_PLAYERS);
 
     [SerializeField]
@@ -47,7 +47,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
     {
         //for editor... making sure we start off with a clean list of players
         _players = new List<Player>();
-        
+
         /*
         for (int i = 0; i < 10; i++)
         {
@@ -70,7 +70,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
         var scaleY = _spawnZoneTransform.transform.localScale.y;
         //rng       
         var x = Random.Range(-scaleX / 2, scaleX / 2);
-        var y = Random.Range(1, 1+(scaleY / 2));
+        var y = Random.Range(1, 1 + (scaleY / 2));
 
         return _spawnZoneTransform.position + new Vector3(x, y);
     }
@@ -83,9 +83,10 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
         //rng
         var x = Random.Range(-scaleX / 2, scaleX / 2);
-        var y = Random.Range(1, 1 + (scaleY / 2));
+        var y = Random.Range(-scaleY / 2, (scaleY / 2));
 
         return _battleZoneTranform.position + new Vector3(x, y);
+        
     }
 
     /// <summary>
@@ -108,7 +109,8 @@ public class PlayerManager : ManagerBase<PlayerManager>
         instance.InitialisePlayer(shipName, playerName);
 
         //register ondestroy hook that will stop tracking the player in the _players list
-        instance.onDestroy += (self) => {
+        instance.onDestroy += (self) =>
+        {
             _players.Remove(self);
         };
 
@@ -121,7 +123,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
     [ContextMenu("Spawn player")]
     void SpawnDebug()
     {
-        Spawn("HornCoom", "Player "+UnityEngine.Random.Range(0, float.MaxValue));
+        Spawn("HornCoom", "Player " + UnityEngine.Random.Range(0, float.MaxValue));
     }
 
     [ContextMenu("Spawn 10 players")]
@@ -133,7 +135,12 @@ public class PlayerManager : ManagerBase<PlayerManager>
         }
     }
 
-    
+    [ContextMenu("Start battleroyale")]
+    void StartBattleRoyaleDebug()
+    {
+        StartCoroutine(CoreTwitchLibSetup.TwitchLibCtrl.Instance.BeginBattleRoyale(null));
+    }
+
 
     internal void BattleRoyaleStarting()
     {

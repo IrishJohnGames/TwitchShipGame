@@ -26,7 +26,8 @@ internal class PlayerST_Fighting : State<Player>
         {
             if (Random.Range(0, 5) == 3)
             {
-                Owner.DestroyTarget(currentTarget);
+                Owner.Fire(currentTarget);
+                //Owner.DestroyTarget(currentTarget);
                 currentTarget = null;
                 return;
             }
