@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,6 +44,56 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
     List<Player> _players = new List<Player>();
 
+    IEnumerator Start()
+    {
+        /*
+        var api = new TarkAPI("https://base_url_goes_here");
+        
+        yield return StartCoroutine(api.GetAllPlayers((req) =>
+        {
+
+            print(Newtonsoft.Json.JsonConvert.SerializeObject(req));
+        }));
+        */
+        yield break;
+        /*
+        
+
+        yield return StartCoroutine(api.GetPlayer("clayman", (req) =>
+         {
+             print(Newtonsoft.Json.JsonConvert.SerializeObject(req));
+         }));
+        */
+        /*
+      
+        */
+        /*
+        yield return StartCoroutine(api.UpdatePlayer("test-123", 15, (req) =>
+        {
+            print(req.success);
+            //            print(Newtonsoft.Json.JsonConvert.SerializeObject(req));
+        }));
+
+        yield return StartCoroutine(api.DeletePlayer("test-123", (req) =>
+        {
+            print(req.success);
+            //            print(Newtonsoft.Json.JsonConvert.SerializeObject(req));
+        }));
+
+        yield return StartCoroutine(api.ResetAllPlease((req) =>
+        {
+            print(req.downloadHandler.text);
+            //            print(Newtonsoft.Json.JsonConvert.SerializeObject(req));
+        }));
+
+        /*
+        yield return StartCoroutine(api.AddPlayer("horn coom", 1, (req) =>
+        {
+            print(req.downloadHandler.text);
+        }));
+        */
+    }
+
     private void Awake()
     {
         //for editor... making sure we start off with a clean list of players
@@ -86,7 +137,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
         var y = Random.Range(-scaleY / 2, (scaleY / 2));
 
         return _battleZoneTranform.position + new Vector3(x, y);
-        
+
     }
 
     /// <summary>
