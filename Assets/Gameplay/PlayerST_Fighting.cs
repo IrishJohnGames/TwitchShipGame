@@ -22,12 +22,18 @@ internal class PlayerST_Fighting : State<Player>
 
     public override void UpdateState()
     {
+        if (Vector2.Distance(Owner.transform.position, WanderToPosition) < 1)
+        {
+            WanderToPosition = PlayerManager.Instance.GetRandomPositionInBattleZone();
+        }
+
+        Owner.MoveTo(WanderToPosition);
+
         if(currentTarget != null)
         {
             if (Random.Range(0, 5) == 3)
             {
                 Owner.Fire(currentTarget);
-                //Owner.DestroyTarget(currentTarget);
                 currentTarget = null;
                 return;
             }
@@ -35,13 +41,11 @@ internal class PlayerST_Fighting : State<Player>
             return;
         }
 
-        Owner.MoveTo(WanderToPosition);
-
         if (Time.time > timeToCheckForEnemies)
         {
             timeToCheckForEnemies = Time.time + TIME_INCREMENT;
 
-            IEnumerable<Player> playersAroundThisPlayer = PlayerManager.Instance.GetPlayersAroundVector2(Owner.transform.position);
+            IEnumerable<Player> playersAroundThisPlayer = PlayerManager.Instance.GetPlayersInBRAroundVector2(Owner.transform.position);
 
             if (playersAroundThisPlayer.Count() > 1)
                 currentTarget = playersAroundThisPlayer.OrderBy(p=> Vector2.Distance(Owner.transform.position, p.transform.position)).

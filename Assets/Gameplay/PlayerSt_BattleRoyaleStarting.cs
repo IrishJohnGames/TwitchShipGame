@@ -5,11 +5,12 @@ internal class PlayerSt_BattleRoyaleStarting : State<Player>
 {
     Vector2 StartPosition;
 
-    static Vector2 desiredScale = new Vector2(0.2f, 0.2f);
+    Vector2 desiredScale = new Vector2(0.1f, 0.1f);
 
     public override void EnterState()
     {
         StartPosition = PlayerManager.Instance.GetRandomPositionInBattleZone();
+        desiredScale += new Vector2(0.05f * Owner.GetNumberOfCrew(), 0.05f * Owner.GetNumberOfCrew());
     }
 
     public override void ExitState()

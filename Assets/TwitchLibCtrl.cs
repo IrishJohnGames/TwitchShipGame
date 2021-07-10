@@ -16,7 +16,12 @@ namespace CoreTwitchLibSetup
 	{
 		ConcurrentBag<Spawnables> ToSpawn = new ConcurrentBag<Spawnables>();
 
-		const int RESET_TIMER_CLEAR_MEM = 1, BUFFER_TIME_INCREMENT = 1;
+        private void Awake()
+        {
+			ToSpawn = new ConcurrentBag<Spawnables>();
+		}
+
+        const int RESET_TIMER_CLEAR_MEM = 1, BUFFER_TIME_INCREMENT = 1;
 		List<MessageCache> MessagesReceivedIRC = new List<MessageCache>();
 		float TimeToResetMessagesReceived = 0;
 
@@ -98,6 +103,9 @@ namespace CoreTwitchLibSetup
 
 			if (e.RewardRedeemed.Redemption.Reward.Title == "TwitchGameTest")
 			{
+				if (PlayerManager.Instance.PlayerExistsSomewhere(e.RewardRedeemed.Redemption.User.DisplayName))
+					return;
+
 				Debug.Log($"StartCrew for player: {e.RewardRedeemed.Redemption.User.DisplayName}. ShipName: {e.RewardRedeemed.Redemption.Reward}");
 				ToSpawn.Add(new Spawnables()
 				{
@@ -155,8 +163,10 @@ namespace CoreTwitchLibSetup
 				Debug.Log($"The bot will now attempt to automatically join the channel provided when the Initialize method was called: {e.AutoJoinChannel}");
 		}
 
-		private void OnJoinedChannel(object sender, TwitchLib.Client.Events.OnJoinedChannelArgs e) =>
-			_client.SendMessage(e.Channel, "Yarrr! It be time for the slaughtarrr!");
+		private void OnJoinedChannel(object sender, TwitchLib.Client.Events.OnJoinedChannelArgs e) {
+			Debug.Log("joined");
+			// _client.SendMessage(e.Channel, "Yarrr! It be time for the slaughtarrr!");
+		}
 
 		private void OnMessageReceived(object sender, TwitchLib.Client.Events.OnMessageReceivedArgs e)
 		{
@@ -182,6 +192,15 @@ namespace CoreTwitchLibSetup
 					break;
 
 				case "joincrew":
+					if (PlayerManager.Instance.PlayerExistsSomewhere(e.Command.ChatMessage.DisplayName)) 
+						return;
+
+					if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.InProgress)
+					{
+						_client.SendMessage(e.Command.ChatMessage.Channel, $"A battle royale is already in progress {e.Command.ChatMessage.DisplayName}. Please wait until the current round is over.");						
+						return;
+					}
+
 					string shipname = e.Command.ArgumentsAsList.FirstOrDefault()?.Trim();
 					if (string.IsNullOrEmpty(shipname))
 					{

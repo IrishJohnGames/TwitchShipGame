@@ -5,19 +5,37 @@ using UnityEngine;
 using System.Linq;
 using CoreTwitchLibSetup;
 using StateMachineLogic;
+using System.Collections;
 
 //TODO: proper namespace?
 //namespace Assets.Gameplay
 //{
 public class Player : MonoBehaviour
 {
+    const int SHOW_CREW_DISPLAY_FOR_TIME = 5;
+
+    int Level = 0;
+
+    public bool ParticipatingInBR = false;
+
     internal StateMachine<Player> stateMachine;
+
+    [SerializeField]
+    GameObject CrewDisplayHolder;
+
+    [SerializeField]
+    Transform crewSpriteDisplayHolder;
+
+    [SerializeField]
+    GameObject crewSpritePrefab;
 
     [SerializeField]
     private Projectile projectilePrefab;
 
     [SerializeField]
     private DisplayMembers displayMembers;
+
+    internal int GetNumberOfCrew() => Crew.Count;
 
     [SerializeField]
     private Health health;
@@ -33,6 +51,10 @@ public class Player : MonoBehaviour
 
         [SerializeField]
         internal SpriteRenderer Flag;
+
+        [SerializeField]
+        // Overall crew level.
+        internal TextMeshPro Level;
     }
 
     [Serializable]
@@ -56,11 +78,10 @@ public class Player : MonoBehaviour
                 }
 
                 OnHealthChanged();
-
             }
         }
 
-        void OnHealthChanged()
+        internal void OnHealthChanged()
         {
             var percentage = (float)Current / (float)Max;
             Healthbar.material.SetFloat("_HealthPercent", percentage);
@@ -72,9 +93,24 @@ public class Player : MonoBehaviour
         }
     }
 
+    internal void PickedUpPowerup(Transform t)
+    {
+        switch (t.name) {
+            case "HealthPowerUp":
+                health.Current += 2;
+                break;
+        }
+    }
+
     internal void DestroyTarget(Player currentTarget)
     {
         Destroy(currentTarget.gameObject);
+    }
+
+    internal void RecalcTotalLevelAndDisplay()
+    {
+        Level = Crew.Sum(o => o.Level);
+        UpdateLevelDisplay();
     }
 
     internal void DealDamage(Player target, int amount)
@@ -95,7 +131,7 @@ public class Player : MonoBehaviour
         transform.position = Vector2.MoveTowards(transform.position, pos, Time.deltaTime * 0.5f);
 
         float angle = Mathf.Atan2(targetDir.y, targetDir.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(angle, Vector3.forward), Time.deltaTime * 0.5f);
     }
 
     internal Projectile Fire(Player other)
@@ -109,17 +145,18 @@ public class Player : MonoBehaviour
     [SerializeField]
     private List<CrewMate> Crew = new List<CrewMate>();
 
-
     private string ShipName;
 
     internal string GetShipName() => ShipName;
 
     [Serializable]
-    class CrewMate
+    internal class CrewMate
     {
         internal int index = -1;
         internal string Name = "";
         internal string Role = "";
+        internal Sprite img;
+        internal int Level;
     }
 
     private void Start()
@@ -127,6 +164,8 @@ public class Player : MonoBehaviour
         stateMachine = new StateMachine<Player>(this);
         stateMachine.ChangeState(new PlayerST_Spawned());
         health.Respawn();
+
+        crewPos = crewSpriteDisplayHolder.position;
 
         onDestroy += (self) =>
         {
@@ -151,7 +190,9 @@ public class Player : MonoBehaviour
 
     public void InitialisePlayer(string shipName, string captain)
     {
+        // Ship name is not being set always.
         ShipName = shipName;
+
         AddCrewmate(captain);
 
         displayMembers.BaseSprite.color = UnityEngine.Random.ColorHSV();
@@ -173,17 +214,45 @@ public class Player : MonoBehaviour
             stateMachine.ChangeState(new PlayerSt_BattleRoyaleStarting());
     }
 
+    Vector2 crewPos;
+
     public void AddCrewmate(string name)
     {
         Crew.Add(new CrewMate()
         {
             index = Crew.Count,
             Name = name,
-            Role = NameManager.Instance.GetCrewRoleName(Crew.Count)
+            Role = NameManager.Instance.GetCrewRoleName(Crew.Count),
         });
 
+        StartCoroutine(PlayerManager.Instance.GetPlayerLevel(this, Crew.Last()));
+
+        try
+        {
+            StartCoroutine(TwitchLibCtrl.Instance.GetUserProfileIcon(name, (sprite) =>
+            {
+                Crew.First(i => i.Name == name).img = sprite;
+
+                GameObject go = Instantiate(crewSpritePrefab, crewSpriteDisplayHolder);
+                crewPos.x += 0.2f;
+                go.transform.position = crewPos;
+                go.GetComponent<SpriteRenderer>().sprite = sprite;
+
+                RefreshDisplay();
+            }));
+        }
+        catch (Exception ex)
+        {
+            Debug.Log("failed to fetch user profile icon, this is most likely because your secrets are not initialized");
+            Debug.LogError(ex);
+        }
+
+        health.Max += 1;
+        health.OnHealthChanged();
         RefreshDisplay();
     }
+
+    internal IEnumerable<CrewMate> GetCrew() => Crew;
 
     void RefreshDisplay()
     {
@@ -194,11 +263,25 @@ public class Player : MonoBehaviour
 
         foreach (CrewMate c in Crew?.OrderBy(o => o.index))
             displayMembers.CrewNames.text += $"{c.Role} {c.Name}\n";
+
+        StartCoroutine(ShowDisplay());
+    }
+
+    void UpdateLevelDisplay()
+    {
+        displayMembers.Level.text = "Lv."+ Level.ToString();
+    }
+
+    IEnumerator ShowDisplay()
+    {
+        CrewDisplayHolder?.SetActive(true);
+        yield return new WaitForSecondsRealtime(SHOW_CREW_DISPLAY_FOR_TIME);
+        CrewDisplayHolder?.SetActive(false);
     }
 
     private void OnDestroy() => onDestroy?.Invoke(this);
 
     internal string GetCrewmate(string name) => Crew.FirstOrDefault(o => o.Name == name)?.Name;
 
-    internal decimal GetcrewCount() => Crew.Count();
+    internal decimal GetCrewCount() => Crew.Count();
 }
