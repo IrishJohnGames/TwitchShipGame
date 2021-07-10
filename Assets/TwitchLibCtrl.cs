@@ -215,9 +215,11 @@ namespace CoreTwitchLibSetup
 		const float BATTLE_ROYALE_DELAY = 5;
 		internal const int BATTLE_STARTS_TIMER_MAX = 5;
 
-		IEnumerator BeginBattleRoyale(TwitchLib.Client.Events.OnChatCommandReceivedArgs e)
+		internal IEnumerator BeginBattleRoyale(TwitchLib.Client.Events.OnChatCommandReceivedArgs e)
         {
-			_client.SendMessage(e.Command.ChatMessage.Channel, "Battle royale is starting!! Get to your ships! You have 2 minutes!");
+			//support game start on editor without having to connect to chat
+			if(e != null)
+				_client.SendMessage(e.Command.ChatMessage.Channel, "Battle royale is starting!! Get to your ships! You have 2 minutes!");
 
 			PlayerManager.Instance.BattleRoyaleMustering();
 
@@ -226,10 +228,14 @@ namespace CoreTwitchLibSetup
 			if (!(PlayerManager.Instance.GetPlayerCount() > 1))
 			{
 				PlayerManager.Instance.BattleRoyaleAborted();
-				_client.SendMessage(e.Command.ChatMessage.Channel, $"Aborting battle royale as not enough ships to participate!");
+				//support game start on editor without having to connect to chat
+				if (e != null)
+					_client.SendMessage(e.Command.ChatMessage.Channel, $"Aborting battle royale as not enough ships to participate!");
 			}
 
-			_client.SendMessage(e.Command.ChatMessage.Channel, $"Battle royale has started!!");
+			//support game start on editor without having to connect to chat
+			if (e != null)
+				_client.SendMessage(e.Command.ChatMessage.Channel, $"Battle royale has started!!");
 
 			PlayerManager.Instance.BattleRoyaleStarting();
 
