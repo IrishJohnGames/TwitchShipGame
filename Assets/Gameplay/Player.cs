@@ -81,10 +81,19 @@ public class Player : MonoBehaviour
         AddCrewmate(captain);
 
         displayMembers.BaseSprite.color = UnityEngine.Random.ColorHSV();
-
-        StartCoroutine(TwitchLibCtrl.Instance.GetUserProfileIcon(captain, (sprite) => {
-            displayMembers.Flag.sprite = sprite;
-        }));
+        
+        try
+        {
+            StartCoroutine(TwitchLibCtrl.Instance.GetUserProfileIcon(captain, (sprite) =>
+            {
+                displayMembers.Flag.sprite = sprite;
+            }));
+        }
+        catch(Exception ex)
+        {
+            Debug.Log("failed to fetch user profile icon, this is most likely because your secrets are not initialized");
+            Debug.LogError(ex);
+        }
 
         if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.SubmissionsClosed)
             stateMachine.ChangeState(new PlayerSt_BattleRoyaleStarting());
