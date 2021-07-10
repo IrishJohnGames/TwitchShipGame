@@ -14,10 +14,17 @@ public class Player : MonoBehaviour
     internal StateMachine<Player> stateMachine;
 
     [SerializeField]
+    private Projectile projectilePrefab;
+
+    [SerializeField]
     private DisplayMembers displayMembers;
 
+    [SerializeField]
+    private Health health;
+
     [Serializable]
-    private class DisplayMembers {
+    private class DisplayMembers
+    {
         [SerializeField]
         internal SpriteRenderer BaseSprite;
 
@@ -28,9 +35,55 @@ public class Player : MonoBehaviour
         internal SpriteRenderer Flag;
     }
 
+    [Serializable]
+    private class Health
+    {
+        [SerializeField]
+        internal SpriteRenderer Healthbar;
+
+        [SerializeField]
+        internal int Max;
+        int _Current = 0;
+        internal int Current
+        {
+            get { return _Current; }
+            set
+            {
+                _Current = value;
+                if (_Current <= 0)
+                {
+                    _Current = 0;
+                }
+
+                OnHealthChanged();
+
+            }
+        }
+
+        void OnHealthChanged()
+        {
+            var percentage = (float)Current / (float)Max;
+            Healthbar.material.SetFloat("_HealthPercent", percentage);
+        }
+
+        public void Respawn()
+        {
+            Current = Max;
+        }
+    }
+
     internal void DestroyTarget(Player currentTarget)
     {
         Destroy(currentTarget.gameObject);
+    }
+
+    internal void DealDamage(Player target, int amount)
+    {
+        target.health.Current -= amount;
+        if (target.health.Current <= 0)
+        {
+            DestroyTarget(target);
+        }
     }
 
     internal void MoveTo(Vector3 pos)
@@ -45,8 +98,18 @@ public class Player : MonoBehaviour
         transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
     }
 
+    internal Projectile Fire(Player other)
+    {
+        var projectileInstance = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
+        projectileInstance.Setup(this, other);
+
+        return projectileInstance;
+    }
+
     [SerializeField]
     private List<CrewMate> Crew = new List<CrewMate>();
+
+
     private string ShipName;
 
     internal string GetShipName() => ShipName;
@@ -63,6 +126,17 @@ public class Player : MonoBehaviour
     {
         stateMachine = new StateMachine<Player>(this);
         stateMachine.ChangeState(new PlayerST_Spawned());
+        health.Respawn();
+
+        onDestroy += (self) =>
+        {
+            //make sure the application is not quitting before releasing particle systems
+            if (!PlayerManager.isApplicationQuitting)
+            {
+                //release ongoing particlesystems from this gameobject
+                GetComponentsInChildren<ParticleSystem>().ToList().ForEach(x => x.transform.parent = null);
+            }
+        };
     }
 
     private void Update()
@@ -81,7 +155,7 @@ public class Player : MonoBehaviour
         AddCrewmate(captain);
 
         displayMembers.BaseSprite.color = UnityEngine.Random.ColorHSV();
-        
+
         try
         {
             StartCoroutine(TwitchLibCtrl.Instance.GetUserProfileIcon(captain, (sprite) =>
@@ -89,7 +163,7 @@ public class Player : MonoBehaviour
                 displayMembers.Flag.sprite = sprite;
             }));
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Debug.Log("failed to fetch user profile icon, this is most likely because your secrets are not initialized");
             Debug.LogError(ex);
@@ -116,7 +190,7 @@ public class Player : MonoBehaviour
         displayMembers.CrewNames.text = "";
 
         displayMembers.ShipName.text = ShipName;
-        displayMembers.CptName.text = Crew.First(o=>o.index == 0).Name;
+        displayMembers.CptName.text = Crew.First(o => o.index == 0).Name;
 
         foreach (CrewMate c in Crew?.OrderBy(o => o.index))
             displayMembers.CrewNames.text += $"{c.Role} {c.Name}\n";
