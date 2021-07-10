@@ -66,6 +66,9 @@ namespace CoreTwitchLibSetup
 			_pubSub.OnPubSubServiceConnected += OnPubSubServiceConnected;
 			_pubSub.OnListenResponse += OnListenResponse;
 			_pubSub.OnChannelPointsRewardRedeemed += OnChannelPointsReceived;
+			
+			// Deprecated but good as fallback. (Was being rate limited perhaps around 12:18 friday.)
+			// _pubSub.OnRewardRedeemed += OnRewardRedeemed;
 			_pubSub.Connect();
 
 			_api = new Api();
@@ -75,6 +78,8 @@ namespace CoreTwitchLibSetup
 		private void OnPubSubServiceConnected(object sender, System.EventArgs e)
 		{
 			// _pubSub.ListenToWhispers(auth.john_id);
+			// _pubSub.ListenToRewards(auth.john_id); // GOOD AS A FALLBACK FOR DEBUG.
+
 			_pubSub.ListenToChannelPoints(auth.john_id);
 
 			_pubSub.SendTopics(auth.oauth_redemption);
@@ -82,8 +87,15 @@ namespace CoreTwitchLibSetup
 
 		private void OnWhisper(object sender, OnWhisperArgs e) => Debug.Log($"{e.Whisper.Data}");
 
+		private void OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)
+        {
+			Debug.Log("Received old style rewards to deprecated listener.");
+		}
+
 		private void OnChannelPointsReceived(object sender, OnChannelPointsRewardRedeemedArgs e)
 		{
+			// Debug.Log("A channel point reward was redeemed.." + e.RewardRedeemed.Redemption.Reward.Title);
+
 			if (e.RewardRedeemed.Redemption.Reward.Title == "TwitchGameTest")
 			{
 				Debug.Log($"StartCrew for player: {e.RewardRedeemed.Redemption.User.DisplayName}. ShipName: {e.RewardRedeemed.Redemption.Reward}");
@@ -92,7 +104,6 @@ namespace CoreTwitchLibSetup
 					shipName = e.RewardRedeemed.Redemption.Reward.Prompt,
 					captain = e.RewardRedeemed.Redemption.User.DisplayName
 				});
-				// PlayerManager.Instance.Spawn("Hello", "there");//();
 			}
 		}
 
@@ -109,15 +120,14 @@ namespace CoreTwitchLibSetup
 			//helix requires access tokens in the header... cba, using kraken for now, even if its deprecated
 			yield return _api.InvokeAsync(_api.V5.Users.GetUserByNameAsync(userLogin),
 				((response) => { getUsersResponse = response; })
-
 			);
 
 			var users = getUsersResponse.Matches;
-			//for (int i = 0; i < response.Users.Length; i++)
+
 			if (users.Length > 0)
 			{
-				var user = users[0];//.Users[0];
-				var imageUrl = user.Logo;//.ProfileImageUrl;
+				var user = users[0];
+				var imageUrl = user.Logo;
 
 				var www = UnityWebRequestTexture.GetTexture(imageUrl);
 				yield return www.SendWebRequest();
@@ -158,21 +168,26 @@ namespace CoreTwitchLibSetup
 			});
 
 			bufferTime = Time.time + BUFFER_TIME_INCREMENT;
-			// Debug.Log($"Message received from {e.ChatMessage.Username}: {e.ChatMessage.Message} : {e.ChatMessage.TmiSentTs}");
 		}
 
 		private void OnChatCommandReceived(object sender, TwitchLib.Client.Events.OnChatCommandReceivedArgs e)
 		{
 			switch (e.Command.CommandText)
 			{
-				case "BattleRoyale":
-					_client.SendMessage(e.Command.ChatMessage.Channel, "Battle royale is starting!! Get to your ships! You have 2 minutes!");
-					StartCoroutine(BeginBattleRoyale());
+				case "battleroyale":
+					if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.NotTriggered)
+						StartCoroutine(BeginBattleRoyale(e));
+					else
+						_client.SendMessage(e.Command.ChatMessage.Channel, "Battle royale already in progress.");
 					break;
 
 				case "joincrew":
 					string shipname = e.Command.ArgumentsAsList.FirstOrDefault()?.Trim();
-					if (string.IsNullOrEmpty(shipname)) return;
+					if (string.IsNullOrEmpty(shipname))
+					{
+						Debug.Log("Auto select a crew?"); // Auto balance?
+						return;
+					}
 
 					Player player = PlayerManager.Instance.GetPlayerByShipName(shipname);
 					if (player == null) return;
@@ -196,11 +211,31 @@ namespace CoreTwitchLibSetup
 					//	break;
 			}
 		}
-		
-		IEnumerator BeginBattleRoyale()
+
+		const float BATTLE_ROYALE_DELAY = 5;
+		internal const int BATTLE_STARTS_TIMER_MAX = 5;
+
+		IEnumerator BeginBattleRoyale(TwitchLib.Client.Events.OnChatCommandReceivedArgs e)
         {
-			yield return new WaitForSecondsRealtime(120);
-			PlayerManager.Instance.BattleRoyaleBegin();
+			_client.SendMessage(e.Command.ChatMessage.Channel, "Battle royale is starting!! Get to your ships! You have 2 minutes!");
+
+			PlayerManager.Instance.BattleRoyaleMustering();
+
+			yield return new WaitForSecondsRealtime(BATTLE_ROYALE_DELAY);
+
+			if (!(PlayerManager.Instance.GetPlayerCount() > 1))
+			{
+				PlayerManager.Instance.BattleRoyaleAborted();
+				_client.SendMessage(e.Command.ChatMessage.Channel, $"Aborting battle royale as not enough ships to participate!");
+			}
+
+			_client.SendMessage(e.Command.ChatMessage.Channel, $"Battle royale has started!!");
+
+			PlayerManager.Instance.BattleRoyaleStarting();
+
+			yield return new WaitForSeconds(BATTLE_STARTS_TIMER_MAX);
+
+			PlayerManager.Instance.BattleRoyaleStarted();
         }
 
 		private void FixedUpdate()

@@ -15,6 +15,22 @@ using Random = UnityEngine.Random;
 /// </summary>
 public class PlayerManager : ManagerBase<PlayerManager>
 {
+    internal BattleRoyaleState battleRoyaleState;
+
+    internal enum BattleRoyaleState
+    {
+        NotTriggered,
+        Mustering, // Idle.. 
+        SubmissionsClosed, // Moving to start positions
+        InProgress, // fighting..
+        Finished // Winner chosen!
+    }
+
+    const int RANGE_OF_PLAYERS = 5;
+
+    internal IEnumerable<Player> GetPlayersAroundVector2(Vector3 position) 
+        => _players.Where(o => Vector2.SqrMagnitude(o.transform.position - position) < RANGE_OF_PLAYERS);
+
     [SerializeField]
     Transform _spawnZoneTransform = null;
 
@@ -59,12 +75,13 @@ public class PlayerManager : ManagerBase<PlayerManager>
         return _spawnZoneTransform.position + new Vector3(x, y);
     }
 
-    public Vector2 GetRandomBattleZoneStartPosition()
+    public Vector2 GetRandomPositionInBattleZone()
     {
         //read spawnzone bounds
         var scaleX = _battleZoneTranform.transform.localScale.x;
         var scaleY = _battleZoneTranform.transform.localScale.y;
-        //rng       
+
+        //rng
         var x = Random.Range(-scaleX / 2, scaleX / 2);
         var y = Random.Range(1, 1 + (scaleY / 2));
 
@@ -116,16 +133,36 @@ public class PlayerManager : ManagerBase<PlayerManager>
         }
     }
 
-    internal void BattleRoyaleBegin()
+    
+
+    internal void BattleRoyaleStarting()
     {
-        foreach(Player p in _players)
-        {
-            p.stateMachine.ChangeState(new PlayerSt_BattleRoyaleStarting());
-        }
+        battleRoyaleState = BattleRoyaleState.SubmissionsClosed;
+
+        foreach (Player p in _players) p.stateMachine.ChangeState(new PlayerSt_BattleRoyaleStarting());
     }
 
-    internal object GetCrewCount() => _players.Sum(o => o.GetcrewCount());
-    internal object GetPlayerCount() => _players.Count();
+
+
+    internal int GetCrewCount() => int.Parse(_players.Sum(o => o.GetcrewCount()).ToString());
+    internal int GetPlayerCount() => _players.Count();
+
+    internal void BattleRoyaleAborted()
+    {
+        battleRoyaleState = BattleRoyaleState.NotTriggered;
+    }
+
+    internal void BattleRoyaleMustering()
+    {
+        battleRoyaleState = BattleRoyaleState.Mustering;
+    }
+
+    internal void BattleRoyaleStarted()
+    {
+        battleRoyaleState = BattleRoyaleState.InProgress;
+        foreach (Player p in _players)
+            p.stateMachine.ChangeState(new PlayerST_Fighting());
+    }
 
     //TODO: maybe store players in dictionary for faster search access?
     //public Player FindPlayerByName(string name) =>

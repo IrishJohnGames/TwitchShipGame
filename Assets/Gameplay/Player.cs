@@ -19,10 +19,30 @@ public class Player : MonoBehaviour
     [Serializable]
     private class DisplayMembers {
         [SerializeField]
+        internal SpriteRenderer BaseSprite;
+
+        [SerializeField]
         internal TextMeshPro ShipName, CptName, CrewNames;
 
         [SerializeField]
         internal SpriteRenderer Flag;
+    }
+
+    internal void DestroyTarget(Player currentTarget)
+    {
+        Destroy(currentTarget.gameObject);
+    }
+
+    internal void MoveTo(Vector3 pos)
+    {
+        Debug.DrawLine(pos, transform.position, UnityEngine.Random.ColorHSV());
+
+        Vector3 targetDir = pos - transform.position;
+
+        transform.position = Vector2.MoveTowards(transform.position, pos, Time.deltaTime * 0.5f);
+
+        float angle = Mathf.Atan2(targetDir.y, targetDir.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
     }
 
     [SerializeField]
@@ -60,9 +80,14 @@ public class Player : MonoBehaviour
         ShipName = shipName;
         AddCrewmate(captain);
 
+        displayMembers.BaseSprite.color = UnityEngine.Random.ColorHSV();
+
         StartCoroutine(TwitchLibCtrl.Instance.GetUserProfileIcon(captain, (sprite) => {
             displayMembers.Flag.sprite = sprite;
         }));
+
+        if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.SubmissionsClosed)
+            stateMachine.ChangeState(new PlayerSt_BattleRoyaleStarting());
     }
 
     public void AddCrewmate(string name)
