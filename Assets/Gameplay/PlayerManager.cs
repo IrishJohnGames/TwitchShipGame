@@ -141,6 +141,13 @@ public class PlayerManager : ManagerBase<PlayerManager>
         _players.FirstOrDefault(o => o.GetShipName() == shipName);
 
     /// <summary>
+    /// finds a ship that contains a playername in the crew
+    /// </summary>
+    public Player GetPlayer(string playerName)
+    {
+        return _players.FirstOrDefault(o=>o.GetCrew().Where(o=>o.Name == playerName).Any());
+    }
+    /// <summary>
     /// Gets a random spawn position relative to the _spawnZoneTransform
     /// </summary>
     /// <returns></returns>
