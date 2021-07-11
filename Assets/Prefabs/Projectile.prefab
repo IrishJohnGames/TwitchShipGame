@@ -132,5 +132,5 @@ MonoBehaviour:
   _hitFx: {fileID: 4691191371322827209, guid: 738f1e25abd870b4ba413bb3fd6ba463, type: 3}
   _travelTime: 1.5
   _damage: 1
-  _cooldown: 4
+  _cooldown: 2
   _applyRandomness: 1

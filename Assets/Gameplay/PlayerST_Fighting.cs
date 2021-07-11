@@ -4,13 +4,13 @@ using System.Linq;
 using UnityEngine;
 internal class PlayerST_Fighting : State<Player>
 {
-    Vector2 WanderToPosition;
+    internal Vector2 moveToPos;
 
     Player currentTarget;
 
     public override void EnterState()
     {
-        WanderToPosition = PlayerManager.Instance.GetRandomPositionInBattleZone();
+        moveToPos = PlayerManager.Instance.GetRandomPositionInBattleZone();
     }
 
     public override void ExitState()
@@ -22,12 +22,12 @@ internal class PlayerST_Fighting : State<Player>
 
     public override void UpdateState()
     {
-        if (Vector2.Distance(Owner.transform.position, WanderToPosition) < 1)
+        if (Vector2.Distance(Owner.transform.position, moveToPos) < 1)
         {
-            WanderToPosition = PlayerManager.Instance.GetRandomPositionInBattleZone();
+            moveToPos = PlayerManager.Instance.GetRandomPositionInBattleZone();
         }
 
-        Owner.MoveTo(WanderToPosition);
+        Owner.MoveTo(moveToPos);
 
         if (currentTarget != null)
         {

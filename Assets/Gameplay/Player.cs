@@ -42,6 +42,23 @@ public class Player : MonoBehaviour
     [SerializeField]
     private Health health;
 
+    internal void FirePerCrewMate(Player target)
+    {
+        if (target != null)
+        {
+            if (!_cooldowns.TryGetValue("standard", out var cooldown))
+            {
+                _cooldowns.Add("standard", cooldown = new Cooldown(10));
+            }
+
+            if (cooldown.Ready())
+            {
+                cooldown.Use();
+                StartCoroutine(FirePerCrewMateCoroutine(target));
+            }
+        }
+    }
+
     [Serializable]
     private class DisplayMembers
     {
@@ -103,8 +120,8 @@ public class Player : MonoBehaviour
         if (playersAroundThisPlayer.Count() > 1)
             return playersAroundThisPlayer.OrderBy(p => Vector2.Distance(Owner.transform.position, p.transform.position)).
                 First(o => o.gameObject != Owner.gameObject);
-        else return playersAroundThisPlayer.FirstOrDefault();
-
+        
+        return null;
     }
 
     internal void PickedUpPowerup(Transform t)
@@ -115,8 +132,6 @@ public class Player : MonoBehaviour
                 break;
         }
     }
-
-    
 
     internal void DecreaseMovementSpeed(float f)
     {
@@ -209,7 +224,6 @@ public class Player : MonoBehaviour
                 cooldown.Use();
                 var projectileInstance = Instantiate(prefab, transform.position, Quaternion.identity);
                 projectileInstance.Setup(this, target);
-                Debug.Log("projectile fired");
 
                 return projectileInstance;
             }
@@ -259,6 +273,49 @@ public class Player : MonoBehaviour
             }
         };
     }
+
+    internal void SetColor(Color color)
+    {
+        displayMembers.BaseSprite.color = color;
+    }
+
+    internal void RemoveCrewmate(string displayName)
+    {
+            if (Crew.Count > 0)
+            {
+                var idx = Crew.IndexOf(Crew.First(o=>o.Name == displayName));
+                if (idx == -1) return;
+
+                var crewMate = Crew[idx];
+
+                if (crewMate != null)
+                {
+                    if (crewMate.iconRenderer != null)
+                    {
+                        Destroy(crewMate.iconRenderer);
+                    }
+
+                    Crew.RemoveAt(idx);
+                    health.Max -= 1;
+                    health.OnHealthChanged();
+                    RefreshDisplay();
+                }
+            }
+    }
+
+    internal void UpdateCourseToTop()
+    {
+        if(PlayerManager.Instance.BRNotInProgress())
+            ((PlayerST_Fighting)stateMachine.currentState).moveToPos = PlayerManager.Instance.GetRandomPositionInBattleZoneNearTop();
+    }
+
+    internal void UpdateCourseToMiddle()
+    {
+        if (PlayerManager.Instance.BRNotInProgress())
+            ((PlayerST_Fighting)stateMachine.currentState).moveToPos = PlayerManager.Instance.GetRandomPositionInBattleZoneNearMiddle();
+    }
+
+    internal void ShuffleCrew() => Crew?.ShuffleMe();
 
     private void Update()
     {
@@ -312,6 +369,24 @@ public class Player : MonoBehaviour
                 cooldown.Use();
                 StartCoroutine(MachineGunFire(target));
 
+            }
+        }
+    }
+
+    private IEnumerator FirePerCrewMateCoroutine(Player currentTarget)
+    {
+        ResetCooldown("standard");
+        for (int i = 0; i < GetCrew().Count(); i++)
+        {
+            if (currentTarget != null)
+            {
+                Fire("standard", new ProjectileTarget(currentTarget));
+                ResetCooldown("standard");
+                yield return new WaitForSeconds(.25f);
+            }
+            else
+            {
+                yield break;
             }
         }
     }
@@ -370,7 +445,6 @@ public class Player : MonoBehaviour
         }
     }
 
-
     [ContextMenu("Shoot chainshot")]
     public void ShootChainshot()
     {
@@ -390,8 +464,6 @@ public class Player : MonoBehaviour
             Fire("grape", new ProjectileTarget(target));
         }
     }
-
-
 
     Vector2 crewPos;
 
@@ -423,7 +495,7 @@ public class Player : MonoBehaviour
         {
             index = Crew.Count,
             Name = name,
-            Role = NameManager.Instance.GetCrewRoleName(Crew.Count),
+            Role = NameManager.Instance.GetCrewRoleName(Crew.Count).Trim(),
         });
 
         StartCoroutine(PlayerManager.Instance.GetPlayerLevel(this, Crew.Last()));
@@ -487,5 +559,24 @@ public class Player : MonoBehaviour
 
     internal string GetCrewmate(string name) => Crew.FirstOrDefault(o => o.Name == name)?.Name;
 
-    internal decimal GetCrewCount() => Crew.Count();
+    internal int GetCrewCount() => Crew.Count();
+}
+
+
+public static class ListExtensions {
+
+    public static void ShuffleMe<T>(this IList<T> list)
+    {
+        System.Random random = new System.Random();
+        int n = list.Count;
+
+        for (int i = list.Count - 1; i > 1; i--)
+        {
+            int rnd = random.Next(i + 1);
+
+            T value = list[rnd];
+            list[rnd] = list[i];
+            list[i] = value;
+        }
+    }
 }

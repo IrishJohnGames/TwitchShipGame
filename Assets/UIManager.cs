@@ -10,6 +10,9 @@ public class UIManager : ManagerBase<UIManager>
     [SerializeField]
     WinnerPopup winnerPopup;
 
+    [SerializeField]
+    GameObject BRInProgressCanvas;
+
     [System.Serializable]
     class Popup
     {
@@ -62,4 +65,6 @@ public class UIManager : ManagerBase<UIManager>
         winnerPopup.anim.Play("BounceInOutWinner");
     }
 
+    internal void ShowBRInProgressScreen() => BRInProgressCanvas.SetActive(true);
+    internal void HideBRInProgressScreen() => BRInProgressCanvas.SetActive(false);
 }

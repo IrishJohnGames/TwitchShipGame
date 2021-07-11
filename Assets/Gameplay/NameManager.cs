@@ -25,5 +25,13 @@ public class NameManager : ManagerBase<NameManager>
         "Cook           "
     };
 
-    public string GetCrewRoleName(int index) => CrewRoleNames[index];
+    const string DEFAULT_TOO_MANY_CREW = "Sailor";
+
+    public string GetCrewRoleName(int index)
+    {
+        if (index >= CrewRoleNames.Count - 1)
+            return DEFAULT_TOO_MANY_CREW;
+        else
+            return CrewRoleNames[index];
+    }
 }

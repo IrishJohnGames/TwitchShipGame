@@ -18,6 +18,8 @@ public class PlayerManager : ManagerBase<PlayerManager>
 {
     internal BattleRoyaleState battleRoyaleState;
 
+    const int COOLDOWN_AMOUNT_FOR_BR = 60;
+
     internal enum BattleRoyaleState
     {
         NotTriggered,
@@ -66,7 +68,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
             if (req == null || req.Length <= 0)
             {
                 StartCoroutine(CreatePlayerForLevelling(cm.Name));
-                cm.Level = 1;
+                cm.Level = 0;
             }
 
             foreach(TarkUserModel tum in req)
@@ -84,7 +86,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
     {
         yield return StartCoroutine(levellingAPI.AddPlayer(name, 1, (req) =>
         {
-            print("CRTEATED" + req.success);
+            print("Created row in database for "+ name +" " +req.success);
         }));
     }
 
@@ -177,8 +179,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
     }
 
-
-    private void FixedUpdate()
+    private void Update()
     {
         if (battleRoyaleState == BattleRoyaleState.InProgress)
         {
@@ -192,7 +193,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
     internal void BRFinished()
     {
         battleRoyaleState = BattleRoyaleState.Finished;
-
+        UIManager.Instance.HideBRInProgressScreen();
         Player winner = _players.First(o => o.ParticipatingInBR);
 
         var amt = REWARD_FOR_WIN / winner.GetNumberOfCrew();
@@ -222,12 +223,26 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
         PowerupManager.Instance.ClearAllSpawnedPrefabs();
 
-        // NOT WORKING FOR WHATEVER REAASON!? D:
         foreach (Player.CrewMate cm in winner.GetCrew())
-            levellingAPI.UpdatePlayer(cm.Name, cm.Level + amt, (cb) => { Debug.Log("Callback"); });
+        {
+            StartCoroutine(levellingAPI.UpdatePlayer(cm.Name, cm.Level + amt + cm.Role.Trim() == "Captain" ? winner.GetCrewCount() : 0, (cb) => {
+                Debug.Log("Levelling success?" + cb.success);
+                StartCoroutine(GetPlayerLevel(winner, cm));
+            }));
+        }
+
+        StartCoroutine(BeginCooldownToNewBR());
 
         battleRoyaleState = BattleRoyaleState.NotTriggered;
     }
+
+    private IEnumerator BeginCooldownToNewBR()
+    {
+        yield return new WaitForSecondsRealtime(COOLDOWN_AMOUNT_FOR_BR);
+        battleRoyaleState = BattleRoyaleState.NotTriggered;
+    }
+
+    internal bool BRNotInProgress() => !(battleRoyaleState == BattleRoyaleState.InProgress);
 
     internal bool PlayerExistsSomewhere(string displayName)
     {
@@ -236,6 +251,35 @@ public class PlayerManager : ManagerBase<PlayerManager>
                 return true;
 
         return false;
+    }
+
+    internal Vector2 GetRandomPositionInBattleZoneNearTop()
+    {
+
+        //read spawnzone bounds
+        var scaleX = _battleZoneTranform.transform.localScale.x;
+        var scaleY = _battleZoneTranform.transform.localScale.y;
+
+        //rng
+        var x = Random.Range(-scaleX / 2, scaleX / 2);
+        var y = Random.Range(0, (scaleY / 2));
+
+        return _battleZoneTranform.position + new Vector3(x, y);
+
+    }
+
+    internal Vector2 GetRandomPositionInBattleZoneNearMiddle()
+    {
+
+        //read spawnzone bounds
+        var scaleX = _battleZoneTranform.transform.localScale.x;
+        var scaleY = _battleZoneTranform.transform.localScale.y;
+
+        //rng
+        var x = Random.Range(-scaleX / 4, scaleX / 4);
+        var y = Random.Range(-scaleY / 4, (scaleY / 4));
+
+        return _battleZoneTranform.position + new Vector3(x, y);
     }
 
     /// <summary>
@@ -309,6 +353,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
     internal void BattleRoyaleStarting()
     {
+        UIManager.Instance.ShowBRInProgressScreen();
         battleRoyaleState = BattleRoyaleState.SubmissionsClosed;
         foreach (Player p in _players)
         {

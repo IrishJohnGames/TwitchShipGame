@@ -23,7 +23,6 @@ namespace CoreTwitchLibSetup
 
         const int RESET_TIMER_CLEAR_MEM = 1, BUFFER_TIME_INCREMENT = 1;
 		List<MessageCache> MessagesReceivedIRC = new List<MessageCache>();
-		float TimeToResetMessagesReceived = 0;
 
 		bool DoingShit = false;
 		float bufferTime;
@@ -184,8 +183,66 @@ namespace CoreTwitchLibSetup
 		{
 			switch (e.Command.CommandText)
 			{
+				case "setshipcolor":
+                    {
+						if (!PlayerManager.Instance.BRNotInProgress()) return;
+
+						Player shipPlayerIsOn = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
+						if(e.Command.ArgumentsAsList.Count != 3)
+							return;
+
+						float r = 0, b=0, g=0;
+
+						if (
+							float.TryParse(e.Command.ArgumentsAsList[0], out r) &&
+							float.TryParse(e.Command.ArgumentsAsList[1], out b) &&
+							float.TryParse(e.Command.ArgumentsAsList[2], out g)
+						)
+							shipPlayerIsOn.SetColor(new Color(r, b, g, 1));
+					}
+					break;
+				case "mutany":
+					{
+						if (PlayerManager.Instance.BRNotInProgress()) return;
+
+						Player shipPlayerIsOn = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
+						if (shipPlayerIsOn.GetCrewCount() > 1)
+						{
+							if (UnityEngine.Random.Range(0, 10) == 1)
+							{
+								shipPlayerIsOn.RemoveCrewmate(shipPlayerIsOn.GetCrew().First().Name);
+								shipPlayerIsOn.ShuffleCrew();
+								_client.SendMessage(e.Command.ChatMessage.Channel, "Mutany!! " + shipPlayerIsOn.GetCrew().First().Name + " is now the captain of " + shipPlayerIsOn.GetShipName());
+							}
+							else
+							{
+								_client.SendMessage(e.Command.ChatMessage.Channel, "Mutany Failed!! " + " Walk the plank, " + e.Command.ChatMessage.DisplayName);
+								shipPlayerIsOn.RemoveCrewmate(e.Command.ChatMessage.DisplayName);
+							}
+						}
+					}
+					break;
+
+				case "middle":
+                    {
+						if (PlayerManager.Instance.BRNotInProgress()) return;
+						
+						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
+						p?.UpdateCourseToMiddle();
+					}
+					break;
+				case "up":
+                    {
+						if (PlayerManager.Instance.BRNotInProgress()) return;
+
+						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
+						p?.UpdateCourseToTop();
+					}
+					break;
 				case "chainshot":
 					{
+						if (PlayerManager.Instance.BRNotInProgress()) return;
+
 						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
 						p?.ShootChainshot();
 					}
@@ -193,6 +250,8 @@ namespace CoreTwitchLibSetup
 
 				case "grapeshot":
 					{
+						if (PlayerManager.Instance.BRNotInProgress()) return;
+
 						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
 						p?.ShootGrapeshot();
 					}
@@ -200,6 +259,8 @@ namespace CoreTwitchLibSetup
 
 				case "machinegun":
 					{
+						if (PlayerManager.Instance.BRNotInProgress()) return;
+
 						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
 						p?.ShootMachineGun();
 					}
@@ -207,11 +268,21 @@ namespace CoreTwitchLibSetup
 
 				case "aoefire":
 					{
+						if (PlayerManager.Instance.BRNotInProgress()) return;
+
 						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
 						p?.ShootAoeFire();
 					}
 					break;
 				case "battleroyale":
+					if (!e.Command.ChatMessage.IsBroadcaster) return;
+
+					if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.Finished)
+                    {
+						_client.SendMessage(e.Command.ChatMessage.Channel, "Woah there nelly, you just fought a battle royale! Hold your horses.");
+						return;
+                    }
+
 					if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.NotTriggered)
 						StartCoroutine(BeginBattleRoyale(e));
 					else
