@@ -187,8 +187,24 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
         var amt = REWARD_FOR_WIN / winner.GetNumberOfCrew();
 
-        UIManager.Instance.ShowPopup(
-            winner.GetShipName() + " Has Won the Battle Royale! Loot valued at " + amt + " was divided between " + winner.GetCrewCount() + " crewmates!"
+        string CrewDisplay = "";
+
+        int counter = 0;
+        foreach(Player.CrewMate cm in winner.GetCrew())
+        {
+            counter++;
+
+            CrewDisplay += cm.Role.ToString() + " " + cm.Name;
+
+            if (counter == 3)
+            {
+                counter = 0;
+                CrewDisplay = "\n";
+            } else CrewDisplay += ", ";
+        }
+
+        UIManager.Instance.ShowWinnerPopup("Winner " + winner.GetShipName(),
+            amt + " loot divided amongst " + winner.GetCrewCount() + " crewmates!", CrewDisplay
         );
 
         foreach (Player p in _players)
@@ -260,6 +276,15 @@ public class PlayerManager : ManagerBase<PlayerManager>
             SpawnDebug();
         }
     }
+
+
+    [ContextMenu("Kill a player")]
+    void KillAPlayer()
+    {
+        _players[0].DealDamage(_players[1], 1000);
+    }
+
+
 
     [ContextMenu("Start battleroyale")]
     void StartBattleRoyaleDebug()

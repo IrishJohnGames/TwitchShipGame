@@ -12,6 +12,8 @@ using System.Collections;
 //{
 public class Player : MonoBehaviour
 {
+    static bool GET_PROFILE_ICON = false;
+
     const int SHOW_CREW_DISPLAY_FOR_TIME = 5;
 
     int Level = 0;
@@ -227,24 +229,27 @@ public class Player : MonoBehaviour
 
         StartCoroutine(PlayerManager.Instance.GetPlayerLevel(this, Crew.Last()));
 
-        try
+        if (GET_PROFILE_ICON)
         {
-            StartCoroutine(TwitchLibCtrl.Instance.GetUserProfileIcon(name, (sprite) =>
+            try
             {
-                Crew.First(i => i.Name == name).img = sprite;
+                StartCoroutine(TwitchLibCtrl.Instance.GetUserProfileIcon(name, (sprite) =>
+                {
+                    Crew.First(i => i.Name == name).img = sprite;
 
-                GameObject go = Instantiate(crewSpritePrefab, crewSpriteDisplayHolder);
-                crewPos.x += 0.2f;
-                go.transform.position = crewPos;
-                go.GetComponent<SpriteRenderer>().sprite = sprite;
+                    GameObject go = Instantiate(crewSpritePrefab, crewSpriteDisplayHolder);
+                    crewPos.x += 0.2f;
+                    go.transform.position = crewPos;
+                    go.GetComponent<SpriteRenderer>().sprite = sprite;
 
-                RefreshDisplay();
-            }));
-        }
-        catch (Exception ex)
-        {
-            Debug.Log("failed to fetch user profile icon, this is most likely because your secrets are not initialized");
-            Debug.LogError(ex);
+                    RefreshDisplay();
+                }));
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("failed to fetch user profile icon, this is most likely because your secrets are not initialized");
+                Debug.LogError(ex);
+            }
         }
 
         health.Max += 1;
