@@ -35,6 +35,9 @@ public class PlayerManager : ManagerBase<PlayerManager>
     internal IEnumerable<Player> GetPlayersInBRAroundVector2ForPowerUp(Vector3 position)
         => _players.Where(o => o.ParticipatingInBR && Vector2.SqrMagnitude(o.transform.position - position) < PICKUP_RANGE);
 
+    internal IEnumerable<Player> GetPlayersInBRAroundVector2ForRange(Vector3 position, float range)
+        => _players.Where(o => o.ParticipatingInBR && Vector2.SqrMagnitude(o.transform.position - position) < range);
+
 
     [SerializeField]
     Transform _spawnZoneTransform = null;

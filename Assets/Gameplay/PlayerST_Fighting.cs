@@ -29,11 +29,11 @@ internal class PlayerST_Fighting : State<Player>
 
         Owner.MoveTo(WanderToPosition);
 
-        if(currentTarget != null)
+        if (currentTarget != null)
         {
             if (Random.Range(0, 5) == 3)
             {
-                Owner.Fire(currentTarget);
+                Owner.Fire("standard", new ProjectileTarget(currentTarget));
                 currentTarget = null;
                 return;
             }
@@ -45,11 +45,7 @@ internal class PlayerST_Fighting : State<Player>
         {
             timeToCheckForEnemies = Time.time + TIME_INCREMENT;
 
-            IEnumerable<Player> playersAroundThisPlayer = PlayerManager.Instance.GetPlayersInBRAroundVector2(Owner.transform.position);
-
-            if (playersAroundThisPlayer.Count() > 1)
-                currentTarget = playersAroundThisPlayer.OrderBy(p=> Vector2.Distance(Owner.transform.position, p.transform.position)).
-                    First(o => o.gameObject != Owner.gameObject);
+            currentTarget = Owner.FindTarget();
         }
     }
 }
