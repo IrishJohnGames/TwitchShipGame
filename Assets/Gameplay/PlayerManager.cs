@@ -226,7 +226,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
         }
 
         UIManager.Instance.ShowWinnerPopup("Winner " + winner.GetShipName(),
-            amt + " loot divided amongst " + winner.GetCrewCount() + " crewmates!", CrewDisplay
+            REWARD_FOR_WIN + " loot divided amongst " + winner.GetCrewCount() + " crewmates!", CrewDisplay
         );
 
         foreach (Player p in _players)

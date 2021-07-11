@@ -329,7 +329,7 @@ namespace CoreTwitchLibSetup
 			}
 		}
 
-		const float BATTLE_ROYALE_DELAY = 5;
+		const float BATTLE_ROYALE_DELAY = 120;
 		internal const int BATTLE_STARTS_TIMER_MAX = 5;
 
 		internal IEnumerator BeginBattleRoyale(TwitchLib.Client.Events.OnChatCommandReceivedArgs e)
