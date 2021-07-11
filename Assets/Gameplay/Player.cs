@@ -18,6 +18,9 @@ public class Player : MonoBehaviour
 
     int Level = 0;
 
+    [SerializeField]
+    float speed = 0.5f;
+
     public bool ParticipatingInBR = false;
 
     internal StateMachine<Player> stateMachine;
@@ -30,9 +33,6 @@ public class Player : MonoBehaviour
 
     [SerializeField]
     GameObject crewSpritePrefab;
-
-    [SerializeField]
-    private Projectile projectilePrefab;
 
     [SerializeField]
     private DisplayMembers displayMembers;
@@ -95,6 +95,18 @@ public class Player : MonoBehaviour
         }
     }
 
+    internal Player FindTarget()
+    {
+        var Owner = this;
+        IEnumerable<Player> playersAroundThisPlayer = PlayerManager.Instance.GetPlayersInBRAroundVector2(Owner.transform.position);
+
+        if (playersAroundThisPlayer.Count() > 1)
+            return playersAroundThisPlayer.OrderBy(p => Vector2.Distance(Owner.transform.position, p.transform.position)).
+                First(o => o.gameObject != Owner.gameObject);
+        else return playersAroundThisPlayer.FirstOrDefault();
+
+    }
+
     internal void PickedUpPowerup(Transform t)
     {
         switch (t.name) {
@@ -102,6 +114,14 @@ public class Player : MonoBehaviour
                 health.Current += 2;
                 break;
         }
+    }
+
+    
+
+    internal void DecreaseMovementSpeed(float f)
+    {
+        speed -= f;
+        if (speed <= 0.01f) speed = 0.01f;
     }
 
     internal void DestroyTarget(Player currentTarget)
@@ -117,31 +137,88 @@ public class Player : MonoBehaviour
 
     internal void DealDamage(Player target, int amount)
     {
+        
         target.health.Current -= amount;
         if (target.health.Current <= 0)
         {
             DestroyTarget(target);
         }
     }
-
+   
     internal void MoveTo(Vector3 pos)
     {
         Debug.DrawLine(pos, transform.position, UnityEngine.Random.ColorHSV());
 
         Vector3 targetDir = pos - transform.position;
 
-        transform.position = Vector2.MoveTowards(transform.position, pos, Time.deltaTime * 0.5f);
+        transform.position = Vector2.MoveTowards(transform.position, pos, Time.deltaTime * speed);
 
         float angle = Mathf.Atan2(targetDir.y, targetDir.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.AngleAxis(angle, Vector3.forward), Time.deltaTime * 0.5f);
     }
 
-    internal Projectile Fire(Player other)
+    class Cooldown
     {
-        var projectileInstance = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
-        projectileInstance.Setup(this, other);
+        private float amount;
+        private float lastUseTime = 0;
+        public Cooldown(float cooldown)
+        {
+            this.amount = cooldown;
+        }
 
-        return projectileInstance;
+        internal void Use()
+        {
+            lastUseTime = Time.time;
+        }
+
+        internal bool Ready()
+        {
+            return lastUseTime + amount <= Time.time;
+        
+        }
+
+        internal void Reset()
+        {
+            lastUseTime = 0;
+        }
+    }
+
+    Dictionary<string, Cooldown> _cooldowns = new Dictionary<string, Cooldown>();
+
+    internal void ResetCooldown(string cooldown)
+    {
+        if(_cooldowns.TryGetValue(cooldown, out var c))
+        {
+            c.Reset();
+        }
+    }
+
+    internal Projectile Fire(string projectileKey, ProjectileTarget target)
+    {
+        var prefab = ProjectileManager.Instance.GetProjectilePrefab(projectileKey);
+        if (prefab != null)
+        {
+            if (!_cooldowns.TryGetValue(projectileKey, out var cooldown))
+            {
+                cooldown = new Cooldown(prefab.cooldown);
+                _cooldowns.Add(projectileKey, cooldown);
+            }
+
+            if (cooldown.Ready())
+            {
+                cooldown.Use();
+                var projectileInstance = Instantiate(prefab, transform.position, Quaternion.identity);
+                projectileInstance.Setup(this, target);
+                Debug.Log("projectile fired");
+
+                return projectileInstance;
+            }
+        }
+        else
+        {
+            Debug.Log("no projectile found with key:"+projectileKey);
+        }
+        return null;
     }
 
     [SerializeField]
@@ -159,6 +236,9 @@ public class Player : MonoBehaviour
         internal string Role = "";
         internal Sprite img;
         internal int Level;
+
+        internal GameObject iconRenderer;
+    
     }
 
     private void Start()
@@ -216,8 +296,127 @@ public class Player : MonoBehaviour
             stateMachine.ChangeState(new PlayerSt_BattleRoyaleStarting());
     }
 
+    [ContextMenu("Shoot machine gun")]
+    public void ShootMachineGun()
+    {
+        var target = FindTarget();
+        if (target != null)
+        {
+            if(!_cooldowns.TryGetValue("machinegun", out var cooldown))
+            {
+                _cooldowns.Add("machinegun", cooldown = new Cooldown(10));
+            }    
+
+            if(cooldown.Ready())
+            {
+                cooldown.Use();
+                StartCoroutine(MachineGunFire(target));
+
+            }
+        }
+    }
+
+    [ContextMenu("Shoot Aoe fire")]
+    public void ShootAoeFire()
+    {
+        var target = FindTarget();
+        if (target != null)
+        {
+            if (!_cooldowns.TryGetValue("aoefire", out var cooldown))
+            {
+                _cooldowns.Add("aoefire", cooldown = new Cooldown(10));
+            }
+
+            if (cooldown.Ready())
+            {
+                cooldown.Use();
+                ResetCooldown("standard");
+                var center = transform.position;
+                for (int i = 0; i < 10; i++)
+                {
+                    var radius = 2.5f;
+
+                    var ang = UnityEngine.Random.value * 360; 
+                    var pos = new Vector3();
+                    pos.x = center.x + radius * Mathf.Sin(ang * Mathf.Deg2Rad);
+                    pos.y = center.y + radius * Mathf.Cos(ang * Mathf.Deg2Rad); 
+                    //pos.y = center.y; 
+                    Fire("standard", new ProjectileTarget(pos).WithPlayerProvider((target)=> {
+                        var players = PlayerManager.Instance.GetPlayersInBRAroundVector2ForRange(pos, 2);
+                        return players.FirstOrDefault();
+                    }));
+                    ResetCooldown("standard");
+                }
+            }
+        }
+    }
+
+
+    IEnumerator MachineGunFire(Player target)
+    {
+        ResetCooldown("standard");
+        for (int i = 0; i < 10; i++)
+        {
+            if (target != null)
+            {
+                Fire("standard", new ProjectileTarget(target));
+                ResetCooldown("standard");
+                yield return new WaitForSeconds(.25f);
+            }
+            else
+            {
+                yield break;
+            }
+        }
+    }
+
+
+    [ContextMenu("Shoot chainshot")]
+    public void ShootChainshot()
+    {
+        var target = FindTarget();
+        if (target != null)
+        {
+            Fire("chain", new ProjectileTarget(target));
+        }
+    }
+
+    [ContextMenu("Shoot grapeshot")]
+    public void ShootGrapeshot()
+    {
+        var target = FindTarget();
+        if (target != null)
+        {
+            Fire("grape", new ProjectileTarget(target));
+        }
+    }
+
+
+
     Vector2 crewPos;
 
+    internal void KillCrewMate()
+    {
+        if (Crew.Count > 0)
+        {
+            var idx = UnityEngine.Random.Range(0, Crew.Count);
+            var crewMate = Crew[idx];
+
+            if(crewMate!=null)
+            {
+                if(crewMate.iconRenderer!=null)
+                {
+                    Destroy(crewMate.iconRenderer);
+                }
+
+                Crew.RemoveAt(idx);
+                health.Max -= 1;
+                health.OnHealthChanged();
+                RefreshDisplay();
+            }
+        }
+    }
+    
     public void AddCrewmate(string name)
     {
         Crew.Add(new CrewMate()
