@@ -16,6 +16,17 @@ using Random = UnityEngine.Random;
 /// </summary>
 public class PlayerManager : ManagerBase<PlayerManager>
 {
+    [SerializeField]
+    Sprite[] playerSprites;
+
+    internal Sprite GetSprite(int index)
+    {
+        if (index >= playerSprites.Length) 
+            return playerSprites.Last();
+        else 
+            return playerSprites[index];
+    }
+
     internal BattleRoyaleState battleRoyaleState;
 
     const int COOLDOWN_AMOUNT_FOR_BR = 60;
@@ -328,6 +339,14 @@ public class PlayerManager : ManagerBase<PlayerManager>
         for (int i = 0; i < 10; i++)
         {
             SpawnDebug();
+
+            foreach(Player p in _players)
+            {
+                foreach (Player.CrewMate cm in p.GetCrew())
+                    cm.Level = Random.Range(0, 10);
+                
+                p.RecalcTotalLevelAndDisplay();
+            }
         }
     }
 

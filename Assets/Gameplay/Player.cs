@@ -12,7 +12,7 @@ using System.Collections;
 //{
 public class Player : MonoBehaviour
 {
-    static bool GET_PROFILE_ICON = false;
+    static bool GET_PROFILE_ICON = true;
 
     const int SHOW_CREW_DISPLAY_FOR_TIME = 5;
 
@@ -545,6 +545,7 @@ public class Player : MonoBehaviour
 
     void UpdateLevelDisplay()
     {
+        displayMembers.BaseSprite.sprite = PlayerManager.Instance.GetSprite(Level);
         displayMembers.Level.text = "Lv."+ Level.ToString();
     }
 

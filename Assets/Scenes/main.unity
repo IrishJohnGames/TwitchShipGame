@@ -1196,6 +1196,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b629de2971d9642459c45f52cd955e49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerSprites:
+  - {fileID: 21300000, guid: 79491362e1fd70b439a29cd298ad00b6, type: 3}
+  - {fileID: 21300000, guid: 24ed4cb9cb6b6174aaaa1671d4fafe18, type: 3}
+  - {fileID: 21300000, guid: e16504c24857a6b4b87a03db911be0a5, type: 3}
+  - {fileID: 21300000, guid: 08ee5e3ade5d6fa40b90486ee5c8ae9a, type: 3}
+  - {fileID: 21300000, guid: 37f246c91646aa04fa4c65cb6de9995b, type: 3}
+  - {fileID: 21300000, guid: 76de276b2d791414daeda2450643b1cd, type: 3}
+  - {fileID: 21300000, guid: 8e8d2c94a4ef93b43b26f751f0d29e30, type: 3}
+  - {fileID: 21300000, guid: b43bc6f23e721184381dbdeb85b5db13, type: 3}
+  - {fileID: 21300000, guid: 7478fc3a92889ba4595e78d3cd704f80, type: 3}
+  - {fileID: 21300000, guid: f21629acb054d9f428ce032097c27b36, type: 3}
+  - {fileID: 21300000, guid: 20001494cbcac1a479eb1fbb18eeadc3, type: 3}
+  - {fileID: 21300000, guid: 1cec5bfa2a2c6bd4286fca9f70ba2639, type: 3}
+  - {fileID: 21300000, guid: 3e2125c93819f5648a4edc027bfec1b9, type: 3}
+  - {fileID: 21300000, guid: 7a9d6d1c597ca94489998fcbb5d2a854, type: 3}
+  - {fileID: 21300000, guid: cf1f4861f44b5884099a2e87976948a6, type: 3}
+  - {fileID: 21300000, guid: 87debed2258530f4d81cd58aa5ff41d4, type: 3}
+  - {fileID: 21300000, guid: 2f7f9c9f60753ab48857b72a38e371a7, type: 3}
+  - {fileID: 21300000, guid: f80fea9dfddf80d4b946c533962d1d88, type: 3}
+  - {fileID: 21300000, guid: 549bf38d5b9fa3847aacbba9527b1550, type: 3}
+  - {fileID: 21300000, guid: 967852da5cfa8af49af87747ee409d22, type: 3}
+  - {fileID: 21300000, guid: 3fb28de50d447b342ac39117f2baf99a, type: 3}
+  - {fileID: 21300000, guid: debcef8a27b073b41836b08b4967d348, type: 3}
+  - {fileID: 21300000, guid: ccd5dde5f951cc343a032f9a2ca457cf, type: 3}
+  - {fileID: 21300000, guid: 3e0990443cce6f54ea42fbeca1bca4bb, type: 3}
+  - {fileID: 21300000, guid: 32e91e1c32f0c9b47abf0f2f76414266, type: 3}
+  - {fileID: 21300000, guid: 307adef2a2aacb54cb0048ab160f7157, type: 3}
+  - {fileID: 21300000, guid: 836e81d1eaa39bc4fae941622bba9260, type: 3}
+  - {fileID: 21300000, guid: ca2857f106df8d44fa99d8809fc12d55, type: 3}
+  - {fileID: 21300000, guid: d8906fd1c9297744d8d8607934c936ff, type: 3}
+  - {fileID: 21300000, guid: 81e0aec001ee5bd4d93e807d9a2e6574, type: 3}
+  - {fileID: 21300000, guid: 7a36bdca064c55f4a96938e1326bd859, type: 3}
+  - {fileID: 21300000, guid: 15692aad71e326d47800d32890d21aef, type: 3}
+  - {fileID: 21300000, guid: 1d194c4c2025fca44a4eeba98049a061, type: 3}
+  - {fileID: 21300000, guid: 07a2d191b699ab841bf8078bab798ef5, type: 3}
+  - {fileID: 21300000, guid: 0abe91ef816c9074c995b6bd32c8cba3, type: 3}
+  - {fileID: 21300000, guid: 4ff3162c9108abc43b0c978bc015cdf7, type: 3}
+  - {fileID: 21300000, guid: 722ac89bff52e8347ab4d4ed6f279cbd, type: 3}
+  - {fileID: 21300000, guid: aa068bf0113f7504089bfbad4887a493, type: 3}
+  - {fileID: 21300000, guid: 2445038785e1cf24dbc5dfe33a5dd84a, type: 3}
+  - {fileID: 21300000, guid: 12f41f11443e3d24d97814b32c80b1fc, type: 3}
+  - {fileID: 21300000, guid: 12f41f11443e3d24d97814b32c80b1fc, type: 3}
+  - {fileID: 21300000, guid: 96c68716fb0c66d4a9d49e2189717233, type: 3}
   _spawnZoneTransform: {fileID: 1093829818}
   _battleZoneTranform: {fileID: 495271584}
   _playerPrefab: {fileID: 5224764213792697089, guid: 76a7ce4294c4baf4c83565174f2d5dfd, type: 3}
