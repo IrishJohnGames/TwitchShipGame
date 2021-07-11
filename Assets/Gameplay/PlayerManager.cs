@@ -35,6 +35,9 @@ public class PlayerManager : ManagerBase<PlayerManager>
     internal IEnumerable<Player> GetPlayersInBRAroundVector2ForPowerUp(Vector3 position)
         => _players.Where(o => o.ParticipatingInBR && Vector2.SqrMagnitude(o.transform.position - position) < PICKUP_RANGE);
 
+    internal IEnumerable<Player> GetPlayersInBRAroundVector2ForRange(Vector3 position, float range)
+        => _players.Where(o => o.ParticipatingInBR && Vector2.SqrMagnitude(o.transform.position - position) < range);
+
 
     [SerializeField]
     Transform _spawnZoneTransform = null;
@@ -137,6 +140,13 @@ public class PlayerManager : ManagerBase<PlayerManager>
     public Player GetPlayerByShipName(string shipName) =>
         _players.FirstOrDefault(o => o.GetShipName() == shipName);
 
+    /// <summary>
+    /// finds a ship that contains a playername in the crew
+    /// </summary>
+    public Player GetPlayer(string playerName)
+    {
+        return _players.FirstOrDefault(o=>o.GetCrew().Where(o=>o.Name == playerName).Any());
+    }
     /// <summary>
     /// Gets a random spawn position relative to the _spawnZoneTransform
     /// </summary>

@@ -184,6 +184,33 @@ namespace CoreTwitchLibSetup
 		{
 			switch (e.Command.CommandText)
 			{
+				case "chainshot":
+					{
+						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
+						p?.ShootChainshot();
+					}
+					break;
+
+				case "grapeshot":
+					{
+						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
+						p?.ShootGrapeshot();
+					}
+					break;
+
+				case "machinegun":
+					{
+						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
+						p?.ShootMachineGun();
+					}
+					break;
+
+				case "aoefire":
+					{
+						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
+						p?.ShootAoeFire();
+					}
+					break;
 				case "battleroyale":
 					if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.NotTriggered)
 						StartCoroutine(BeginBattleRoyale(e));
