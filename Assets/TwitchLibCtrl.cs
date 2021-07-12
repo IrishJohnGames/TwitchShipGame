@@ -14,6 +14,8 @@ namespace CoreTwitchLibSetup
 {
 	public class TwitchLibCtrl : ManagerBase<TwitchLibCtrl>
 	{
+		bool useFallback = false;
+
 		ConcurrentBag<Spawnables> ToSpawn = new ConcurrentBag<Spawnables>();
 
         private void Awake()
@@ -68,21 +70,34 @@ namespace CoreTwitchLibSetup
 			_pubSub = new PubSub();
 			// _pubSub.OnWhisper += OnWhisper;
 			_pubSub.OnPubSubServiceConnected += OnPubSubServiceConnected;
+			_pubSub.OnPubSubServiceError += OnPubSubServiceError;
+			_pubSub. OnPubSubServiceClosed += OnPubSubServiceClosed;
 			_pubSub.OnListenResponse += OnListenResponse;
 			_pubSub.OnChannelPointsRewardRedeemed += OnChannelPointsReceived;
 			
 			// Deprecated but good as fallback. (Was being rate limited perhaps around 12:18 friday.)
-			// _pubSub.OnRewardRedeemed += OnRewardRedeemed;
+			 _pubSub.OnRewardRedeemed += OnRewardRedeemed;
 			_pubSub.Connect();
 
 			_api = new Api();
 			_api.Settings.ClientId = auth.client_id;
 		}
 
-		private void OnPubSubServiceConnected(object sender, System.EventArgs e)
+        private void OnPubSubServiceClosed(object sender, EventArgs e)
+        {
+			Debug.Log("CLOSED");
+        }
+
+        private void OnPubSubServiceError(object sender, OnPubSubServiceErrorArgs e)
+        {
+			Debug.Log("ERROR");
+        }
+
+        private void OnPubSubServiceConnected(object sender, System.EventArgs e)
 		{
 			// _pubSub.ListenToWhispers(auth.john_id);
-			// _pubSub.ListenToRewards(auth.john_id); // GOOD AS A FALLBACK FOR DEBUG.
+
+			 _pubSub.ListenToRewards(auth.john_id); // GOOD AS A FALLBACK FOR DEBUG.
 
 			_pubSub.ListenToChannelPoints(auth.john_id);
 
@@ -93,23 +108,32 @@ namespace CoreTwitchLibSetup
 
 		private void OnRewardRedeemed(object sender, OnRewardRedeemedArgs e)
         {
-			Debug.Log("Received old style rewards to deprecated listener.");
+			Debug.Log($"Reward Redeemed listener triggered.. Use Fallback: { useFallback } || {e.RewardTitle}");
+
+			if (useFallback)
+				OnChannelPointRedemption(e.RewardTitle, e.DisplayName);
 		}
 
 		private void OnChannelPointsReceived(object sender, OnChannelPointsRewardRedeemedArgs e)
 		{
-			// Debug.Log("A channel point reward was redeemed.." + e.RewardRedeemed.Redemption.Reward.Title);
+			Debug.Log($"Channel Point received listener triggered.. Use Fallback: { useFallback } || {e.RewardRedeemed.Redemption.Reward.Title}");
 
-			if (e.RewardRedeemed.Redemption.Reward.Title == "TwitchGameTest")
+			if (!useFallback)
+				OnChannelPointRedemption(e.RewardRedeemed.Redemption.Reward.Title, e.RewardRedeemed.Redemption.User.DisplayName);
+		}
+
+		void OnChannelPointRedemption(string rewardTitle, string requestor)
+        {
+			if (rewardTitle == "StartCrew")
 			{
-				if (PlayerManager.Instance.PlayerExistsSomewhere(e.RewardRedeemed.Redemption.User.DisplayName))
+				if (PlayerManager.Instance.PlayerExistsSomewhere(requestor))
 					return;
 
-				Debug.Log($"StartCrew for player: {e.RewardRedeemed.Redemption.User.DisplayName}. ShipName: {e.RewardRedeemed.Redemption.Reward}");
+				Debug.Log($"StartCrew for player: {requestor}.");
 				ToSpawn.Add(new Spawnables()
 				{
-					shipName = e.RewardRedeemed.Redemption.Reward.Prompt,
-					captain = e.RewardRedeemed.Redemption.User.DisplayName
+					shipName = "",
+					captain = requestor
 				});
 			}
 		}
@@ -184,14 +208,14 @@ namespace CoreTwitchLibSetup
 			switch (e.Command.CommandText)
 			{
 				case "setshipcolor":
-                    {
+					{
 						if (!PlayerManager.Instance.BRNotInProgress()) return;
 
 						Player shipPlayerIsOn = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
-						if(e.Command.ArgumentsAsList.Count != 3)
+						if (e.Command.ArgumentsAsList.Count != 3)
 							return;
 
-						float r = 0, b=0, g=0;
+						float r = 0, b = 0, g = 0;
 
 						if (
 							float.TryParse(e.Command.ArgumentsAsList[0], out r) &&
@@ -224,15 +248,15 @@ namespace CoreTwitchLibSetup
 					break;
 
 				case "middle":
-                    {
+					{
 						if (PlayerManager.Instance.BRNotInProgress()) return;
-						
+
 						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
 						p?.UpdateCourseToMiddle();
 					}
 					break;
 				case "up":
-                    {
+					{
 						if (PlayerManager.Instance.BRNotInProgress()) return;
 
 						var p = PlayerManager.Instance.GetPlayer(e.Command.ChatMessage.DisplayName);
@@ -275,20 +299,61 @@ namespace CoreTwitchLibSetup
 					}
 					break;
 				case "battleroyale":
-					if (!e.Command.ChatMessage.IsBroadcaster) return;
+					if (e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsModerator)
+					{
 
-					if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.Finished)
-                    {
-						_client.SendMessage(e.Command.ChatMessage.Channel, "Woah there nelly, you just fought a battle royale! Hold your horses.");
-						return;
-                    }
+						if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.Finished)
+						{
+							_client.SendMessage(e.Command.ChatMessage.Channel, "Woah there nelly, you just fought a battle royale! Hold your horses.");
+							return;
+						}
 
-					if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.NotTriggered)
-						StartCoroutine(BeginBattleRoyale(e));
-					else
-						_client.SendMessage(e.Command.ChatMessage.Channel, "Battle royale already in progress.");
+						if (PlayerManager.Instance.battleRoyaleState == PlayerManager.BattleRoyaleState.NotTriggered)
+							StartCoroutine(BeginBattleRoyale(e));
+						else
+							_client.SendMessage(e.Command.ChatMessage.Channel, "Battle royale already in progress.");
+					}
 					break;
 
+				case "usefallback":
+					{
+						if (e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsModerator)
+						{
+							useFallback = true;
+							_client.SendMessage(e.Command.ChatMessage.Channel, $"Now using fallback.");
+						}
+					}
+					break;
+
+				case "usedefault":
+					{
+						if (e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsModerator)
+						{
+							useFallback = false;
+							_client.SendMessage(e.Command.ChatMessage.Channel, $"Now using default.");
+						}
+					}
+					break;
+				case "createcrew":
+					if(useFallback)
+                    {
+						string sn = e.Command.ArgumentsAsList.FirstOrDefault()?.Trim();
+						Debug.Log($"Creating a crew for {e.Command.ChatMessage.DisplayName} called {sn}");
+
+						if (PlayerManager.Instance.PlayerExistsSomewhere(e.Command.ChatMessage.DisplayName))
+							return;
+
+						Debug.Log($"StartCrew for player: {e.Command.ChatMessage.DisplayName}.");
+
+						PlayerManager.Instance.Spawn(sn, e.Command.ChatMessage.DisplayName);
+
+						//ToSpawn.Add(new Spawnables()
+						//{
+						//	shipName = sn,
+						//	captain = e.Command.ChatMessage.DisplayName
+						//});
+					}
+					break;
 				case "joincrew":
 					if (PlayerManager.Instance.PlayerExistsSomewhere(e.Command.ChatMessage.DisplayName)) 
 						return;
@@ -363,6 +428,10 @@ namespace CoreTwitchLibSetup
 
 		private void FixedUpdate()
         {
+			if(MessagesReceivedIRC.Count > 1000) MessagesReceivedIRC = new List<MessageCache>();
+
+			if (useFallback) return;
+
 			if(MessagesReceivedIRC.Any() && ToSpawn.Any() & !DoingShit && Time.time > bufferTime)
             {
 				DoingShit = true;
@@ -376,7 +445,6 @@ namespace CoreTwitchLibSetup
 				DoingShit = false;
             }
 
-			if(MessagesReceivedIRC.Count > 1000) MessagesReceivedIRC = new List<MessageCache>();
 		}
     }
 }
