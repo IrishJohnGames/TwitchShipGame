@@ -334,6 +334,7 @@ namespace CoreTwitchLibSetup
 						}
 					}
 					break;
+				case "startcrew":
 				case "createcrew":
 					if(useFallback)
                     {
@@ -384,7 +385,34 @@ namespace CoreTwitchLibSetup
 				//	//example of how to spawn a player 
 				//	PlayerManager.Instance.Spawn(e.Command.CommandText, e.Command.ChatMessage.DisplayName);
 				//	break;
-
+				case "reset":
+					if (e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsModerator)
+					{
+						PlayerManager.Instance.DestroyAllPlayers();
+						PlayerManager.Instance.BattleRoyaleAborted();
+						_client.SendMessage(e.Command.ChatMessage.Channel, "Resetting.");
+					}
+					break;
+				case "stronkai":
+					if (e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsModerator)
+					{
+						PlayerManager.Instance.SpawnAI(10);
+						_client.SendMessage(e.Command.ChatMessage.Channel, "Spawning stronk ai (up to 10 crew)!");
+					}
+					break;
+				case "weakai":
+					if (e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsModerator)
+					{
+						PlayerManager.Instance.SpawnAI(3);
+						_client.SendMessage(e.Command.ChatMessage.Channel, "Spawning weak ai (up to 3 crew)!.");
+					}
+					break;
+				case "help":
+					if(useFallback)
+						_client.SendMessage(e.Command.ChatMessage.Channel, "[Using fallback] Use createcrew <shipname> or startcrew <shipname> to create a crew! Use !joincrew <shipname> to join an existing crew!");
+					else
+						_client.SendMessage(e.Command.ChatMessage.Channel, "Use channel points to create a crew! Type !joincrew <shipname> into chat to join an existing crew (no channel points nescessary)!");
+					break;
 				case "about":
 					_client.SendMessage(e.Command.ChatMessage.Channel, "I be a Twitch bot running on the TwitchLib vessel!");
 					break;
@@ -413,6 +441,8 @@ namespace CoreTwitchLibSetup
 				//support game start on editor without having to connect to chat
 				if (e != null)
 					_client.SendMessage(e.Command.ChatMessage.Channel, $"Aborting battle royale as not enough ships to participate!");
+
+				yield break;
 			}
 
 			//support game start on editor without having to connect to chat

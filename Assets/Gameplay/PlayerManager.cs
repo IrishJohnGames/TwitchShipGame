@@ -21,9 +21,9 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
     internal Sprite GetSprite(int index)
     {
-        if (index >= playerSprites.Length) 
+        if (index >= playerSprites.Length)
             return playerSprites.Last();
-        else 
+        else
             return playerSprites[index];
     }
 
@@ -82,7 +82,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
                 cm.Level = 0;
             }
 
-            foreach(TarkUserModel tum in req)
+            foreach (TarkUserModel tum in req)
             {
                 Debug.Log(tum.name);
                 Debug.Log(tum.level);
@@ -97,7 +97,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
     {
         yield return StartCoroutine(levellingAPI.AddPlayer(name, 1, (req) =>
         {
-            print("Created row in database for "+ name +" " +req.success);
+            print("Created row in database for " + name + " " + req.success);
         }));
     }
 
@@ -158,7 +158,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
     /// </summary>
     public Player GetPlayer(string playerName)
     {
-        return _players.FirstOrDefault(o=>o.GetCrew().Where(o=>o.Name == playerName).Any());
+        return _players.FirstOrDefault(o => o.GetCrew().Where(o => o.Name == playerName).Any());
     }
     /// <summary>
     /// Gets a random spawn position relative to the _spawnZoneTransform
@@ -212,7 +212,7 @@ public class PlayerManager : ManagerBase<PlayerManager>
         string CrewDisplay = "";
 
         int counter = 0;
-        foreach(Player.CrewMate cm in winner.GetCrew())
+        foreach (Player.CrewMate cm in winner.GetCrew())
         {
             counter++;
 
@@ -324,12 +324,12 @@ public class PlayerManager : ManagerBase<PlayerManager>
     }
 
     [ContextMenu("Spawn player")]
-    void SpawnDebug()
+    internal void SpawnAI(int amt = 10)
     {
-        Player p = Spawn("HornCoom", "Player " + UnityEngine.Random.Range(0, float.MaxValue));
-        for (int i = 0; i < Random.Range(0, 10); i++)
+        Player p = Spawn(" U.S.S Horn Coom ", "AI- " + UnityEngine.Random.Range(0, float.MaxValue));
+        for (int i = 0; i < Random.Range(0, amt); i++)
         {
-            p.AddCrewmate("boof" + UnityEngine.Random.Range(0, float.MaxValue));
+            p.AddCrewmate("AI-" + UnityEngine.Random.Range(0, float.MaxValue));
         }
     }
 
@@ -338,13 +338,13 @@ public class PlayerManager : ManagerBase<PlayerManager>
     {
         for (int i = 0; i < 10; i++)
         {
-            SpawnDebug();
+            SpawnAI();
 
-            foreach(Player p in _players)
+            foreach (Player p in _players)
             {
                 foreach (Player.CrewMate cm in p.GetCrew())
                     cm.Level = Random.Range(0, 10);
-                
+
                 p.RecalcTotalLevelAndDisplay();
             }
         }
@@ -384,13 +384,19 @@ public class PlayerManager : ManagerBase<PlayerManager>
 
     internal int GetPlayerCount() => _players.Count();
 
-    internal int GetBRPlayerCount() => _players.Where(o=>o.ParticipatingInBR).Count();
+    internal int GetBRPlayerCount() => _players.Where(o => o.ParticipatingInBR).Count();
 
     internal void BattleRoyaleAborted()
     {
         battleRoyaleState = BattleRoyaleState.NotTriggered;
         foreach (Player p in _players)
             p.ParticipatingInBR = false;
+    }
+
+    internal void DestroyAllPlayers()
+    {
+        for(int i = 0; i < _players.Count; i++)
+            _players[i].DealDamage(_players[i], 10000);
     }
 
     internal void BattleRoyaleStarted()
